@@ -3,10 +3,17 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   getAllChampions,
   pickRandomChampions,
+  ROLE_META,
   type Champion,
 } from "@/lib/lol-api";
 import { buildLanePairings, type ExclusionPair } from "@/lib/randomize";
 import { LaneRow } from "@/components/LaneRow";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
