@@ -72,14 +72,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Nghiện LOL - Random Team Liên Minh Huyền Thoại" },
+      { name: "description", content: "Giải quyết ân oán!! CMDN - clb nghiện game số 1 Đà Nẵng" },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Nghiện LOL - Random Team Liên Minh Huyền Thoại" },
+      { property: "og:description", content: "Giải quyết ân oán!! CMDN - clb nghiện game số 1 Đà Nẵng" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Nghiện LOL - Random Team Liên Minh Huyền Thoại" },
+      { name: "twitter:description", content: "Giải quyết ân oán!! CMDN - clb nghiện game số 1 Đà Nẵng" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9f46e38b-7f65-4499-90d0-f533ae0b30bd/id-preview-59dea75c--798fb065-8b64-41bc-a26e-91489f067067.lovable.app-1778658824543.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9f46e38b-7f65-4499-90d0-f533ae0b30bd/id-preview-59dea75c--798fb065-8b64-41bc-a26e-91489f067067.lovable.app-1778658824543.png" },
     ],
     links: [
       {
