@@ -72,7 +72,14 @@ export async function getAllChampions(): Promise<Champion[]> {
   return champs;
 }
 
-export function pickRandomChampions(pool: Champion[], n: number): Champion[] {
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+export function pickRandomChampions(
+  pool: Champion[],
+  n: number,
+  excludeIds?: Set<string>
+): Champion[] {
+  const filtered = excludeIds && excludeIds.size > 0
+    ? pool.filter((c) => !excludeIds.has(c.id))
+    : pool;
+  const shuffled = [...filtered].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, n);
 }
