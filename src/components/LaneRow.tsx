@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ROLE_META,
   ROLES_ORDER,
@@ -8,17 +8,15 @@ import {
 import { SlotMachine } from "./SlotMachine";
 import { ChampionStrip } from "./ChampionStrip";
 
-export type LaneResult = {
-  role: Role;
-  alpha: { name: string | null; champion: Champion | null };
-  beta: { name: string | null; champion: Champion | null };
-};
-
 type Phase =
   | "idle"
+  | "pre-role"
   | "role"
+  | "pre-members"
   | "members"
+  | "pre-champ-alpha"
   | "champ-alpha"
+  | "pre-champ-beta"
   | "champ-beta"
   | "done";
 
@@ -31,13 +29,14 @@ type Props = {
   betaChampion: Champion | null;
   allMemberNames: string[];
   championPool: Champion[];
-  startDelayMs: number;
   onComplete?: () => void;
 };
 
-const ROLE_SLOT_MS = 600;
-const MEMBER_SLOT_MS = 600;
-const CHAMP_STRIP_MS = 900;
+const PRE_DELAY_MS = 2000;
+const ROLE_SLOT_MS = 3500;
+const MEMBER_SLOT_MS = 4000;
+const CHAMP_STRIP_MS = 5500;
+const FINAL_HOLD_MS = 1500;
 
 export function LaneRow({
   index,
@@ -48,24 +47,54 @@ export function LaneRow({
   betaChampion,
   allMemberNames,
   championPool,
-  startDelayMs,
   onComplete,
 }: Props) {
   const [phase, setPhase] = useState<Phase>("idle");
+  const memberDoneRef = useRef(0);
 
   useEffect(() => {
     setPhase("idle");
-    const t = setTimeout(() => setPhase("role"), startDelayMs);
+    memberDoneRef.current = 0;
+    const t = setTimeout(() => setPhase("pre-role"), 100);
     return () => clearTimeout(t);
-  }, [startDelayMs, finalRole, alphaName, betaName, alphaChampion, betaChampion]);
+  }, [finalRole, alphaName, betaName, alphaChampion, betaChampion]);
+
+  // Phase auto-transitions: pre-* phases wait then advance
+  useEffect(() => {
+    if (phase === "pre-role") {
+      const t = setTimeout(() => setPhase("role"), PRE_DELAY_MS);
+      return () => clearTimeout(t);
+    }
+    if (phase === "pre-members") {
+      const t = setTimeout(() => setPhase("members"), PRE_DELAY_MS);
+      return () => clearTimeout(t);
+    }
+    if (phase === "pre-champ-alpha") {
+      const t = setTimeout(() => setPhase("champ-alpha"), PRE_DELAY_MS);
+      return () => clearTimeout(t);
+    }
+    if (phase === "pre-champ-beta") {
+      const t = setTimeout(() => setPhase("champ-beta"), PRE_DELAY_MS);
+      return () => clearTimeout(t);
+    }
+    if (phase === "done") {
+      const t = setTimeout(() => onComplete?.(), FINAL_HOLD_MS);
+      return () => clearTimeout(t);
+    }
+  }, [phase, onComplete]);
 
   const roleMeta = ROLE_META[finalRole];
 
+  const isPastRole =
+    phase !== "idle" && phase !== "pre-role" && phase !== "role";
+  const isPastMembers =
+    isPastRole && phase !== "pre-members" && phase !== "members";
+
   const roleNode = (() => {
-    if (phase === "idle") {
+    if (phase === "idle" || phase === "pre-role") {
       return (
-        <div className="flex h-16 items-center justify-center text-xs uppercase tracking-[0.3em] text-muted-foreground">
-          Lane {index + 1}
+        <div className="flex h-20 items-center justify-center text-xs uppercase tracking-[0.4em] text-muted-foreground">
+          {phase === "pre-role" ? "Selecting lane…" : `Lane ${index + 1}`}
         </div>
       );
     }
@@ -75,12 +104,12 @@ export function LaneRow({
           items={ROLES_ORDER}
           finalItem={finalRole}
           spinDurationMs={ROLE_SLOT_MS}
-          itemHeight={64}
-          onDone={() => setPhase("members")}
+          itemHeight={80}
+          onDone={() => setPhase("pre-members")}
           renderItem={(r) => (
             <div className="flex items-center gap-3">
-              <img src={ROLE_META[r].iconUrl} alt={r} className="h-8 w-8" style={{ filter: "drop-shadow(0 0 4px var(--gold))" }} />
-              <span className="font-display text-lg uppercase tracking-widest text-gold-bright">
+              <img src={ROLE_META[r].iconUrl} alt={r} className="h-10 w-10" style={{ filter: "drop-shadow(0 0 6px var(--gold))" }} />
+              <span className="font-display text-2xl uppercase tracking-widest text-gold-bright">
                 {ROLE_META[r].label}
               </span>
             </div>
@@ -89,9 +118,9 @@ export function LaneRow({
       );
     }
     return (
-      <div className="hextech-frame flex h-16 items-center justify-center gap-3">
-        <img src={roleMeta.iconUrl} alt={finalRole} className="h-8 w-8" style={{ filter: "drop-shadow(0 0 6px var(--gold-bright))" }} />
-        <span className="font-display text-lg uppercase tracking-widest text-gold-bright text-glow-gold">
+      <div className="hextech-frame flex h-20 items-center justify-center gap-3">
+        <img src={roleMeta.iconUrl} alt={finalRole} className="h-10 w-10" style={{ filter: "drop-shadow(0 0 8px var(--gold-bright))" }} />
+        <span className="font-display text-2xl uppercase tracking-widest text-gold-bright text-glow-gold">
           {roleMeta.label}
         </span>
       </div>
@@ -101,15 +130,22 @@ export function LaneRow({
   const renderMemberSlot = (name: string | null, color: string) => {
     if (!name) {
       return (
-        <div className="hextech-frame flex h-12 items-center justify-center text-sm text-muted-foreground italic">
+        <div className="hextech-frame flex h-14 items-center justify-center text-sm text-muted-foreground italic">
           —
         </div>
       );
     }
-    if (phase === "idle" || phase === "role") {
+    if (!isPastRole) {
       return (
-        <div className="hextech-frame flex h-12 items-center justify-center text-sm text-muted-foreground">
+        <div className="hextech-frame flex h-14 items-center justify-center text-sm text-muted-foreground">
           ???
+        </div>
+      );
+    }
+    if (phase === "pre-members") {
+      return (
+        <div className="hextech-frame flex h-14 items-center justify-center text-sm uppercase tracking-[0.3em] text-muted-foreground animate-pulse">
+          Drawing…
         </div>
       );
     }
@@ -119,13 +155,15 @@ export function LaneRow({
           items={allMemberNames.length > 0 ? allMemberNames : [name]}
           finalItem={name}
           spinDurationMs={MEMBER_SLOT_MS}
-          itemHeight={48}
+          itemHeight={56}
           onDone={() => {
-            // both slots run in parallel; advance only once via a microtask guard
-            setPhase((p) => (p === "members" ? "champ-alpha" : p));
+            memberDoneRef.current += 1;
+            if (memberDoneRef.current >= 2 || !alphaName || !betaName) {
+              setPhase("pre-champ-alpha");
+            }
           }}
           renderItem={(n) => (
-            <span className="font-display text-base tracking-wide" style={{ color }}>
+            <span className="font-display text-lg tracking-wide" style={{ color }}>
               {n}
             </span>
           )}
@@ -133,8 +171,8 @@ export function LaneRow({
       );
     }
     return (
-      <div className="hextech-frame flex h-12 items-center justify-center">
-        <span className="font-display text-base tracking-wide" style={{ color, textShadow: `0 0 10px ${color}` }}>
+      <div className="hextech-frame flex h-14 items-center justify-center">
+        <span className="font-display text-lg tracking-wide" style={{ color, textShadow: `0 0 10px ${color}` }}>
           {name}
         </span>
       </div>
@@ -147,45 +185,49 @@ export function LaneRow({
   ) => {
     if (!champ) {
       return (
-        <div className="hextech-frame flex h-28 items-center justify-center text-muted-foreground italic">
+        <div className="hextech-frame flex h-32 items-center justify-center text-muted-foreground italic">
           —
         </div>
       );
     }
-    const myPhase: Phase = side === "alpha" ? "champ-alpha" : "champ-beta";
-    const beforeMyPhase =
-      phase === "idle" ||
-      phase === "role" ||
-      phase === "members" ||
-      (side === "beta" && phase === "champ-alpha");
+    const myStripPhase: Phase = side === "alpha" ? "champ-alpha" : "champ-beta";
+    const myPrePhase: Phase = side === "alpha" ? "pre-champ-alpha" : "pre-champ-beta";
 
-    if (beforeMyPhase) {
+    const beforeMe =
+      !isPastMembers ||
+      (side === "beta" &&
+        (phase === "pre-champ-alpha" || phase === "champ-alpha"));
+
+    if (beforeMe) {
       return (
-        <div className="hextech-frame flex h-28 items-center justify-center text-xs uppercase tracking-[0.3em] text-muted-foreground">
-          Awaiting summoner
+        <div className="hextech-frame flex h-32 items-center justify-center text-xs uppercase tracking-[0.3em] text-muted-foreground">
+          Awaiting champion
         </div>
       );
     }
-    if (phase === myPhase) {
+    if (phase === myPrePhase) {
+      return (
+        <div className="hextech-frame flex h-32 items-center justify-center text-xs uppercase tracking-[0.3em] text-gold animate-pulse">
+          Rolling champion…
+        </div>
+      );
+    }
+    if (phase === myStripPhase) {
       return (
         <ChampionStrip
           pool={championPool}
           finalChampion={champ}
           durationMs={CHAMP_STRIP_MS}
           onDone={() => {
-            if (side === "alpha") setPhase("champ-beta");
-            else {
-              setPhase("done");
-              onComplete?.();
-            }
+            if (side === "alpha") setPhase("pre-champ-beta");
+            else setPhase("done");
           }}
         />
       );
     }
-    // done
     return (
-      <div className="hextech-frame flex h-28 items-center gap-3 px-3">
-        <div className="h-20 w-20 shrink-0 overflow-hidden border border-gold/60">
+      <div className="hextech-frame flex h-32 items-center gap-3 px-3">
+        <div className="h-24 w-24 shrink-0 overflow-hidden border border-gold/60">
           <img src={champ.squareUrl} alt={champ.name} className="h-full w-full object-cover" />
         </div>
         <div className="min-w-0">
@@ -197,17 +239,12 @@ export function LaneRow({
   };
 
   return (
-    <div className="grid grid-cols-1 gap-2">
-      {/* Role center */}
-      <div className="mx-auto w-full max-w-xs">{roleNode}</div>
-
-      {/* Members row */}
+    <div className="grid grid-cols-1 gap-3">
+      <div className="mx-auto w-full max-w-sm">{roleNode}</div>
       <div className="grid grid-cols-2 gap-3">
         {renderMemberSlot(alphaName, "var(--team-alpha)")}
         {renderMemberSlot(betaName, "var(--team-beta)")}
       </div>
-
-      {/* Champion row */}
       <div className="grid grid-cols-2 gap-3">
         {renderChampSlot("alpha", alphaChampion)}
         {renderChampSlot("beta", betaChampion)}
