@@ -42,7 +42,13 @@ type RoundLane = {
   betaChamp: Champion | null;
 };
 
-type Round = { id: number; lanes: RoundLane[] };
+type Round = {
+  id: number;
+  lanes: RoundLane[];
+  revealed: number; // count of lanes already revealed in table
+};
+
+const INTER_LANE_GAP_MS = 3000;
 
 function HomePage() {
   const [members, setMembers] = useState<string[]>([]);
@@ -60,7 +66,11 @@ function HomePage() {
 
   const [rounds, setRounds] = useState<Round[]>([]);
   const [shuffling, setShuffling] = useState(false);
+  const [activeRoundId, setActiveRoundId] = useState<number | null>(null);
+  const [activeLaneIdx, setActiveLaneIdx] = useState<number>(-1); // -1 = closed
+  const usedChampionsRef = useRef<Set<string>>(new Set());
   const roundIdRef = useRef(0);
+  const gapTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -77,6 +87,7 @@ function HomePage() {
       });
     return () => {
       alive = false;
+      if (gapTimerRef.current) window.clearTimeout(gapTimerRef.current);
     };
   }, []);
 
@@ -128,7 +139,17 @@ function HomePage() {
       exclusions
     );
     const totalChamps = pairings.length * 2;
-    const champPicks = pickRandomChampions(champions, totalChamps);
+
+    // No duplicate champions across rounds. If pool exhausted, reset.
+    let used = usedChampionsRef.current;
+    const available = champions.length - used.size;
+    if (available < totalChamps) {
+      used = new Set();
+      usedChampionsRef.current = used;
+    }
+    const champPicks = pickRandomChampions(champions, totalChamps, used);
+    champPicks.forEach((c) => used.add(c.id));
+
     const lanes: RoundLane[] = pairings.map((p, i) => ({
       role: p.role,
       alphaName: p.alpha,
@@ -137,16 +158,58 @@ function HomePage() {
       betaChamp: p.beta ? champPicks[i * 2 + 1] : null,
     }));
     roundIdRef.current += 1;
-    setRounds((prev) => [...prev, { id: roundIdRef.current, lanes }]);
+    const newRound: Round = {
+      id: roundIdRef.current,
+      lanes,
+      revealed: 0,
+    };
+    setRounds((prev) => [...prev, newRound]);
     setShuffling(true);
-    // Each lane staggered by 1500ms; lane completes in ~3s.
-    const totalMs = (lanes.length - 1) * 1500 + 3200;
-    window.setTimeout(() => setShuffling(false), totalMs);
+    setActiveRoundId(newRound.id);
+    setActiveLaneIdx(0);
+  };
+
+  const handleLaneComplete = () => {
+    const roundId = activeRoundId;
+    const laneIdx = activeLaneIdx;
+    if (roundId == null || laneIdx < 0) return;
+
+    // Close modal, mark lane as revealed in the round table
+    setActiveLaneIdx(-1);
+    setRounds((prev) =>
+      prev.map((r) =>
+        r.id === roundId ? { ...r, revealed: laneIdx + 1 } : r
+      )
+    );
+
+    // Find the round to know its lane count
+    const round = rounds.find((r) => r.id === roundId);
+    const totalLaneCount = round?.lanes.length ?? 0;
+    const nextIdx = laneIdx + 1;
+
+    if (nextIdx >= totalLaneCount) {
+      // Round complete
+      setShuffling(false);
+      setActiveRoundId(null);
+      return;
+    }
+
+    // 3s pause then open modal for next lane
+    gapTimerRef.current = window.setTimeout(() => {
+      setActiveLaneIdx(nextIdx);
+    }, INTER_LANE_GAP_MS);
   };
 
   const handleReset = () => {
     setRounds([]);
+    usedChampionsRef.current = new Set();
   };
+
+  const activeRound = rounds.find((r) => r.id === activeRoundId) ?? null;
+  const activeLane =
+    activeRound && activeLaneIdx >= 0
+      ? activeRound.lanes[activeLaneIdx]
+      : null;
 
   return (
     <div className="min-h-screen px-4 py-8 md:px-8 lg:px-12">
