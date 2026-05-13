@@ -136,10 +136,9 @@ export function LaneRow({
       );
     }
     if (!isPastRole) {
-      const showHint = phase === "pre-members";
       return (
         <div className="hextech-frame flex h-14 items-center justify-center text-sm text-muted-foreground">
-          {showHint ? "Drawing summoner…" : "???"}
+          ???
         </div>
       );
     }
