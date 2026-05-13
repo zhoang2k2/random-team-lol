@@ -35,9 +35,9 @@ type Props = {
   onComplete?: () => void;
 };
 
-const ROLE_SLOT_MS = 700;
-const MEMBER_SLOT_MS = 700;
-const CHAMP_STRIP_MS = 1300;
+const ROLE_SLOT_MS = 600;
+const MEMBER_SLOT_MS = 600;
+const CHAMP_STRIP_MS = 900;
 
 export function LaneRow({
   index,
