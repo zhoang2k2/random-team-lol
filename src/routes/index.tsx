@@ -406,16 +406,49 @@ function HomePage() {
           <section className="space-y-8">
             {rounds.length === 0 && <EmptyDraft />}
             {rounds.map((r, idx) => (
-              <RoundView
-                key={r.id}
-                roundNumber={idx + 1}
-                round={r}
-                allMembers={members}
-                champions={champions}
-              />
+              <RoundView key={r.id} roundNumber={idx + 1} round={r} />
             ))}
           </section>
         </div>
+
+        {/* Shuffle modal */}
+        <Dialog
+          open={activeLane !== null}
+          onOpenChange={(o) => {
+            // prevent manual close while shuffling
+            if (!o && shuffling) return;
+          }}
+        >
+          <DialogContent
+            className="hextech-frame max-w-3xl border-gold/60 bg-background/95 backdrop-blur"
+            onInteractOutside={(e) => e.preventDefault()}
+            onEscapeKeyDown={(e) => e.preventDefault()}
+          >
+            <DialogTitle className="font-display text-center text-sm uppercase tracking-[0.4em] text-gold">
+              {activeRound
+                ? `Round ${rounds.findIndex((r) => r.id === activeRound.id) + 1} · Lane ${activeLaneIdx + 1} / ${activeRound.lanes.length}`
+                : ""}
+            </DialogTitle>
+            <DialogDescription className="text-center font-serif italic text-xs text-muted-foreground">
+              The Hextech engine spins…
+            </DialogDescription>
+            <div className="gold-divider my-2" />
+            {activeLane && activeRound && (
+              <LaneRow
+                key={`${activeRound.id}-${activeLaneIdx}`}
+                index={activeLaneIdx}
+                finalRole={activeLane.role}
+                alphaName={activeLane.alphaName}
+                betaName={activeLane.betaName}
+                alphaChampion={activeLane.alphaChamp}
+                betaChampion={activeLane.betaChamp}
+                allMemberNames={members}
+                championPool={champions}
+                onComplete={handleLaneComplete}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
 
         <Footer />
       </div>
