@@ -29,14 +29,17 @@ type Props = {
   betaChampion: Champion | null;
   allMemberNames: string[];
   championPool: Champion[];
+  scale?: number;
   onComplete?: () => void;
 };
 
-const PRE_DELAY_MS = 2000;
-const ROLE_SLOT_MS = 3500;
-const MEMBER_SLOT_MS = 4000;
-const CHAMP_STRIP_MS = 5500;
-const FINAL_HOLD_MS = 1500;
+// Base durations (in ms) at scale=1 → ~6.5s per lane
+const BASE_PRE_DELAY_MS = 500;
+const BASE_ROLE_SLOT_MS = 500;
+const BASE_MEMBER_SLOT_MS = 500;
+const BASE_CHAMP_ALPHA_MS = 2000;
+const BASE_CHAMP_BETA_MS = 3000;
+const BASE_FINAL_HOLD_MS = 500;
 
 export function LaneRow({
   index,
