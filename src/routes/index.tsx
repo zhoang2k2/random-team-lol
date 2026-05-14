@@ -43,7 +43,7 @@ type Round = {
 };
 
 const INTER_LANE_GAP_MS = 1000;
-const DEFAULT_LANE_SECONDS = 6.5;
+const DEFAULT_LANE_SECONDS = 4.5;
 const MIN_LANE_SECONDS = 3;
 const MAX_LANE_SECONDS = 30;
 
