@@ -166,6 +166,10 @@ function HomePage() {
     setShuffling(true);
     setActiveRoundId(newRound.id);
     setActiveLaneIdx(0);
+    // Smooth-scroll to the shuffle arena
+    requestAnimationFrame(() => {
+      arenaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
   };
 
   const handleLaneComplete = () => {
