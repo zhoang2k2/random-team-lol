@@ -48,7 +48,10 @@ type Round = {
   revealed: number; // count of lanes already revealed in table
 };
 
-const INTER_LANE_GAP_MS = 3000;
+const INTER_LANE_GAP_MS = 1000;
+const DEFAULT_LANE_SECONDS = 6.5;
+const MIN_LANE_SECONDS = 3;
+const MAX_LANE_SECONDS = 30;
 
 function HomePage() {
   const [members, setMembers] = useState<string[]>([]);
@@ -59,6 +62,7 @@ function HomePage() {
   const [exclusions, setExclusions] = useState<ExclusionPair[]>([]);
   const [exclA, setExclA] = useState("");
   const [exclB, setExclB] = useState("");
+  const [laneSeconds, setLaneSeconds] = useState<number>(DEFAULT_LANE_SECONDS);
 
   const [champions, setChampions] = useState<Champion[]>([]);
   const [loadingChamps, setLoadingChamps] = useState(true);
@@ -309,6 +313,40 @@ function HomePage() {
                 onChange={setRandomMembers}
               />
 
+              {/* Random duration */}
+              <div>
+                <label className="font-display text-xs uppercase tracking-[0.25em] text-muted-foreground">
+                  Random duration per lane (seconds)
+                </label>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <input
+                    type="number"
+                    min={MIN_LANE_SECONDS}
+                    max={MAX_LANE_SECONDS}
+                    step={0.5}
+                    className="input-hex w-24"
+                    value={laneSeconds}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      if (Number.isNaN(v)) return;
+                      setLaneSeconds(
+                        Math.min(MAX_LANE_SECONDS, Math.max(MIN_LANE_SECONDS, v))
+                      );
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="btn-hex text-xs"
+                    onClick={() => setLaneSeconds(DEFAULT_LANE_SECONDS)}
+                  >
+                    Reset
+                  </button>
+                  <span className="text-xs italic text-muted-foreground">
+                    Default {DEFAULT_LANE_SECONDS}s · range {MIN_LANE_SECONDS}–{MAX_LANE_SECONDS}s
+                  </span>
+                </div>
+              </div>
+
               {/* Exclusions */}
               <div>
                 <label className="font-display text-xs uppercase tracking-[0.25em] text-muted-foreground">
@@ -420,7 +458,7 @@ function HomePage() {
           }}
         >
           <DialogContent
-            className="hextech-frame max-w-3xl border-gold/60 bg-background/95 backdrop-blur"
+            className="hextech-frame border-gold/60 bg-background/95 backdrop-blur w-[min(92vw,720px)] max-w-[92vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6"
             onInteractOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
           >
@@ -444,6 +482,7 @@ function HomePage() {
                 betaChampion={activeLane.betaChamp}
                 allMemberNames={members}
                 championPool={champions}
+                scale={laneSeconds / DEFAULT_LANE_SECONDS}
                 onComplete={handleLaneComplete}
               />
             )}

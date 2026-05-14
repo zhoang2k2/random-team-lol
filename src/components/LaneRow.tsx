@@ -29,14 +29,17 @@ type Props = {
   betaChampion: Champion | null;
   allMemberNames: string[];
   championPool: Champion[];
+  scale?: number;
   onComplete?: () => void;
 };
 
-const PRE_DELAY_MS = 2000;
-const ROLE_SLOT_MS = 3500;
-const MEMBER_SLOT_MS = 4000;
-const CHAMP_STRIP_MS = 5500;
-const FINAL_HOLD_MS = 1500;
+// Base durations (in ms) at scale=1 → ~6.5s per lane
+const BASE_PRE_DELAY_MS = 500;
+const BASE_ROLE_SLOT_MS = 500;
+const BASE_MEMBER_SLOT_MS = 500;
+const BASE_CHAMP_ALPHA_MS = 2000;
+const BASE_CHAMP_BETA_MS = 3000;
+const BASE_FINAL_HOLD_MS = 500;
 
 export function LaneRow({
   index,
@@ -47,8 +50,15 @@ export function LaneRow({
   betaChampion,
   allMemberNames,
   championPool,
+  scale = 1,
   onComplete,
 }: Props) {
+  const PRE_DELAY_MS = Math.round(BASE_PRE_DELAY_MS * scale);
+  const ROLE_SLOT_MS = Math.round(BASE_ROLE_SLOT_MS * scale);
+  const MEMBER_SLOT_MS = Math.round(BASE_MEMBER_SLOT_MS * scale);
+  const CHAMP_ALPHA_MS = Math.round(BASE_CHAMP_ALPHA_MS * scale);
+  const CHAMP_BETA_MS = Math.round(BASE_CHAMP_BETA_MS * scale);
+  const FINAL_HOLD_MS = Math.round(BASE_FINAL_HOLD_MS * scale);
   const [phase, setPhase] = useState<Phase>("idle");
   const memberDoneRef = useRef(0);
 
@@ -217,7 +227,7 @@ export function LaneRow({
         <ChampionStrip
           pool={championPool}
           finalChampion={champ}
-          durationMs={CHAMP_STRIP_MS}
+          durationMs={side === "alpha" ? CHAMP_ALPHA_MS : CHAMP_BETA_MS}
           onDone={() => {
             if (side === "alpha") setPhase("pre-champ-beta");
             else setPhase("done");
