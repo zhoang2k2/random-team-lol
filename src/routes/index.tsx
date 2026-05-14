@@ -62,6 +62,7 @@ function HomePage() {
   const [exclusions, setExclusions] = useState<ExclusionPair[]>([]);
   const [exclA, setExclA] = useState("");
   const [exclB, setExclB] = useState("");
+  const [laneSeconds, setLaneSeconds] = useState<number>(DEFAULT_LANE_SECONDS);
 
   const [champions, setChampions] = useState<Champion[]>([]);
   const [loadingChamps, setLoadingChamps] = useState(true);
