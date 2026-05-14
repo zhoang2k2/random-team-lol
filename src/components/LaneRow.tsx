@@ -50,8 +50,15 @@ export function LaneRow({
   betaChampion,
   allMemberNames,
   championPool,
+  scale = 1,
   onComplete,
 }: Props) {
+  const PRE_DELAY_MS = Math.round(BASE_PRE_DELAY_MS * scale);
+  const ROLE_SLOT_MS = Math.round(BASE_ROLE_SLOT_MS * scale);
+  const MEMBER_SLOT_MS = Math.round(BASE_MEMBER_SLOT_MS * scale);
+  const CHAMP_ALPHA_MS = Math.round(BASE_CHAMP_ALPHA_MS * scale);
+  const CHAMP_BETA_MS = Math.round(BASE_CHAMP_BETA_MS * scale);
+  const FINAL_HOLD_MS = Math.round(BASE_FINAL_HOLD_MS * scale);
   const [phase, setPhase] = useState<Phase>("idle");
   const memberDoneRef = useRef(0);
 
