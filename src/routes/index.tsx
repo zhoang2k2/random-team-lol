@@ -69,6 +69,7 @@ function HomePage() {
   const usedChampionsRef = useRef<Set<string>>(new Set());
   const roundIdRef = useRef(0);
   const gapTimerRef = useRef<number | null>(null);
+  const arenaRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let alive = true;
