@@ -227,7 +227,7 @@ export function LaneRow({
         <ChampionStrip
           pool={championPool}
           finalChampion={champ}
-          durationMs={CHAMP_STRIP_MS}
+          durationMs={side === "alpha" ? CHAMP_ALPHA_MS : CHAMP_BETA_MS}
           onDone={() => {
             if (side === "alpha") setPhase("pre-champ-beta");
             else setPhase("done");
