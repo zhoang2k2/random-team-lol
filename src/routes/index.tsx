@@ -48,7 +48,10 @@ type Round = {
   revealed: number; // count of lanes already revealed in table
 };
 
-const INTER_LANE_GAP_MS = 3000;
+const INTER_LANE_GAP_MS = 1000;
+const DEFAULT_LANE_SECONDS = 6.5;
+const MIN_LANE_SECONDS = 3;
+const MAX_LANE_SECONDS = 30;
 
 function HomePage() {
   const [members, setMembers] = useState<string[]>([]);
