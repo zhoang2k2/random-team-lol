@@ -458,7 +458,8 @@ function HomePage() {
           }}
         >
           <DialogContent
-            className="hextech-frame border-gold/60 bg-background/95 backdrop-blur w-[min(92vw,720px)] max-w-[92vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6"
+            className="hextech-frame border-gold/60 bg-background/95 backdrop-blur w-[min(92vw,720px)] max-w-[92vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6 data-[state=open]:slide-in-from-top-0 data-[state=closed]:slide-out-to-top-0"
+            style={{ top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
             onInteractOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
           >
