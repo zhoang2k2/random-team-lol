@@ -39,10 +39,12 @@ export function ChampionStrip({ pool, finalChampion, durationMs, onDone }: Props
     setTranslateX(0);
     setTransitioning(false);
 
+    // Small jitter so the marker doesn't land dead-center every time, but
+    // small enough that the centered champion is unambiguously the final one.
+    const jitter = (Math.random() - 0.5) * (ITEM_W * 0.15);
+
     const startTimer = setTimeout(() => {
       const containerW = containerRef.current?.clientWidth ?? 600;
-      // position so final item sits centered, with a tiny offset for realism
-      const jitter = (Math.random() - 0.5) * (ITEM_W * 0.6);
       const target =
         finalIndex * STEP - containerW / 2 + ITEM_W / 2 + jitter;
       setTransitioning(true);
@@ -52,10 +54,8 @@ export function ChampionStrip({ pool, finalChampion, durationMs, onDone }: Props
     const doneTimer = setTimeout(() => {
       if (!doneRef.current) {
         doneRef.current = true;
-        // snap to centered exact position
-        const containerW = containerRef.current?.clientWidth ?? 600;
-        setTransitioning(false);
-        setTranslateX(finalIndex * STEP - containerW / 2 + ITEM_W / 2);
+        // Do NOT snap to a different position — keep the same jittered target
+        // so the visual outcome matches what the user just watched land.
         onDone?.();
       }
     }, durationMs + 80);
