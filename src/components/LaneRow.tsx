@@ -33,13 +33,13 @@ type Props = {
   onComplete?: () => void;
 };
 
-// Base durations (in ms) at scale=1 → ~6.5s per lane
-const BASE_PRE_DELAY_MS = 500;
-const BASE_ROLE_SLOT_MS = 500;
-const BASE_MEMBER_SLOT_MS = 500;
-const BASE_CHAMP_ALPHA_MS = 2000;
-const BASE_CHAMP_BETA_MS = 3000;
-const BASE_FINAL_HOLD_MS = 500;
+// Base durations (in ms) at scale=1 → ~4.5s per lane
+const BASE_PRE_DELAY_MS = 300;
+const BASE_ROLE_SLOT_MS = 300;
+const BASE_MEMBER_SLOT_MS = 300;
+const BASE_CHAMP_ALPHA_MS = 1500;
+const BASE_CHAMP_BETA_MS = 1800;
+const BASE_FINAL_HOLD_MS = 300;
 
 export function LaneRow({
   index,
