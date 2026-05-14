@@ -313,6 +313,40 @@ function HomePage() {
                 onChange={setRandomMembers}
               />
 
+              {/* Random duration */}
+              <div>
+                <label className="font-display text-xs uppercase tracking-[0.25em] text-muted-foreground">
+                  Random duration per lane (seconds)
+                </label>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <input
+                    type="number"
+                    min={MIN_LANE_SECONDS}
+                    max={MAX_LANE_SECONDS}
+                    step={0.5}
+                    className="input-hex w-24"
+                    value={laneSeconds}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      if (Number.isNaN(v)) return;
+                      setLaneSeconds(
+                        Math.min(MAX_LANE_SECONDS, Math.max(MIN_LANE_SECONDS, v))
+                      );
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="btn-hex text-xs"
+                    onClick={() => setLaneSeconds(DEFAULT_LANE_SECONDS)}
+                  >
+                    Reset
+                  </button>
+                  <span className="text-xs italic text-muted-foreground">
+                    Default {DEFAULT_LANE_SECONDS}s · range {MIN_LANE_SECONDS}–{MAX_LANE_SECONDS}s
+                  </span>
+                </div>
+              </div>
+
               {/* Exclusions */}
               <div>
                 <label className="font-display text-xs uppercase tracking-[0.25em] text-muted-foreground">
