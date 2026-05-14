@@ -448,46 +448,40 @@ function HomePage() {
           </section>
         </div>
 
-        {/* Shuffle modal */}
-        <Dialog
-          open={activeLane !== null}
-          onOpenChange={(o) => {
-            // prevent manual close while shuffling
-            if (!o && shuffling) return;
-          }}
+        {/* Shuffle Arena (inline, between setup grid and results history) */}
+        <section
+          ref={arenaRef}
+          className="mt-10 hextech-frame border-gold/60 bg-background/80 p-4 sm:p-6 scroll-mt-8"
         >
-          <DialogContent
-            className="hextech-frame border-gold/60 bg-background/95 backdrop-blur w-[min(92vw,720px)] max-w-[92vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6 data-[state=open]:slide-in-from-top-0 data-[state=closed]:slide-out-to-top-0"
-            style={{ top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
-            onInteractOutside={(e) => e.preventDefault()}
-            onEscapeKeyDown={(e) => e.preventDefault()}
-          >
-            <DialogTitle className="font-display text-center text-sm uppercase tracking-[0.4em] text-gold">
-              {activeRound
-                ? `Round ${rounds.findIndex((r) => r.id === activeRound.id) + 1} · Lane ${activeLaneIdx + 1} / ${activeRound.lanes.length}`
-                : ""}
-            </DialogTitle>
-            <DialogDescription className="text-center font-serif italic text-xs text-muted-foreground">
-              The Hextech engine spins…
-            </DialogDescription>
-            <div className="gold-divider my-2" />
-            {activeLane && activeRound && (
-              <LaneRow
-                key={`${activeRound.id}-${activeLaneIdx}`}
-                index={activeLaneIdx}
-                finalRole={activeLane.role}
-                alphaName={activeLane.alphaName}
-                betaName={activeLane.betaName}
-                alphaChampion={activeLane.alphaChamp}
-                betaChampion={activeLane.betaChamp}
-                allMemberNames={members}
-                championPool={champions}
-                scale={laneSeconds / DEFAULT_LANE_SECONDS}
-                onComplete={handleLaneComplete}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+          <h2 className="font-display text-center text-sm uppercase tracking-[0.4em] text-gold">
+            {activeRound && activeLane
+              ? `Round ${rounds.findIndex((r) => r.id === activeRound.id) + 1} · Lane ${activeLaneIdx + 1} / ${activeRound.lanes.length}`
+              : "Shuffle Arena"}
+          </h2>
+          <p className="text-center font-serif italic text-xs text-muted-foreground">
+            {activeLane ? "The Hextech engine spins…" : "Press Shuffle to begin the ceremony."}
+          </p>
+          <div className="gold-divider my-3" />
+          {activeLane && activeRound ? (
+            <LaneRow
+              key={`${activeRound.id}-${activeLaneIdx}`}
+              index={activeLaneIdx}
+              finalRole={activeLane.role}
+              alphaName={activeLane.alphaName}
+              betaName={activeLane.betaName}
+              alphaChampion={activeLane.alphaChamp}
+              betaChampion={activeLane.betaChamp}
+              allMemberNames={members}
+              championPool={champions}
+              scale={laneSeconds / DEFAULT_LANE_SECONDS}
+              onComplete={handleLaneComplete}
+            />
+          ) : (
+            <div className="flex h-40 items-center justify-center text-xs uppercase tracking-[0.4em] text-muted-foreground">
+              Idle
+            </div>
+          )}
+        </section>
 
         <Footer />
       </div>
