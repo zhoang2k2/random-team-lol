@@ -302,21 +302,67 @@ function HomePage() {
       <div className="mx-auto max-w-7xl">
         <Header />
 
+        {/* Shuffle Arena — TOP of page, only visible while shuffling */}
+        {showArena && (
+          <section
+            ref={arenaRef}
+            className="mt-8 hextech-frame border-gold/60 bg-background/80 p-4 sm:p-6 scroll-mt-8 animate-fade-in"
+          >
+            <h2 className="font-display text-center text-sm uppercase tracking-[0.4em] text-gold">
+              {activeRound && activeLane
+                ? `Round ${rounds.findIndex((r) => r.id === activeRound.id) + 1} · Lane ${activeLaneIdx + 1} / ${activeRound.lanes.length}`
+                : "Shuffle Arena"}
+            </h2>
+            <p className="text-center font-serif italic text-xs text-muted-foreground">
+              {activeLane ? "The Hextech engine spins…" : "Preparing next lane…"}
+            </p>
+            <div className="gold-divider my-3" />
+            <div className="flex min-h-[360px] items-center justify-center">
+              {activeLane && activeRound ? (
+                <div className="w-full max-w-3xl mx-auto">
+                  <LaneRow
+                    key={`${activeRound.id}-${activeLaneIdx}`}
+                    index={activeLaneIdx}
+                    finalRole={activeLane.role}
+                    alphaName={activeLane.alphaName}
+                    betaName={activeLane.betaName}
+                    alphaChampion={activeLane.alphaChamp}
+                    betaChampion={activeLane.betaChamp}
+                    allMemberNames={members}
+                    championPool={champions}
+                    scale={laneSeconds / DEFAULT_LANE_SECONDS}
+                    onComplete={handleLaneComplete}
+                  />
+                </div>
+              ) : (
+                <div className="text-xs uppercase tracking-[0.4em] text-muted-foreground animate-pulse">
+                  Channeling…
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
         <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
           {/* LEFT: setup column */}
-          <section className="space-y-6">
+          <section className={`space-y-6 ${inputsLocked ? "pointer-events-none opacity-60" : ""}`}>
             <div className="hextech-frame p-5">
               <h2 className="font-display text-lg uppercase tracking-[0.3em] text-gold-bright">
-                Summoners
+                Summoners <span className="text-xs text-muted-foreground">({members.length}/{MAX_SUMMONERS})</span>
               </h2>
               <div className="gold-divider my-3" />
 
               <div className="flex gap-2">
                 <input
                   className="input-hex w-full"
-                  placeholder="Enter summoner name…"
+                  placeholder={
+                    members.length >= MAX_SUMMONERS
+                      ? `Max ${MAX_SUMMONERS} summoners`
+                      : "Enter summoner name…"
+                  }
                   value={memberInput}
                   onChange={(e) => setMemberInput(e.target.value)}
+                  disabled={inputsLocked || members.length >= MAX_SUMMONERS}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
@@ -324,7 +370,12 @@ function HomePage() {
                     }
                   }}
                 />
-                <button className="btn-hex" onClick={addMember} type="button">
+                <button
+                  className="btn-hex"
+                  onClick={addMember}
+                  type="button"
+                  disabled={inputsLocked || members.length >= MAX_SUMMONERS}
+                >
                   Add
                 </button>
               </div>
@@ -347,6 +398,7 @@ function HomePage() {
                       className="text-xs text-muted-foreground hover:text-destructive"
                       onClick={() => removeMember(m)}
                       aria-label={`Remove ${m}`}
+                      disabled={inputsLocked}
                     >
                       ✕
                     </button>
@@ -372,6 +424,7 @@ function HomePage() {
                       key={n}
                       type="button"
                       onClick={() => setTeamSize(n)}
+                      disabled={inputsLocked}
                       className={`btn-hex ${
                         teamSize === n ? "btn-hex-primary" : ""
                       }`}
@@ -408,6 +461,7 @@ function HomePage() {
                     step={0.5}
                     className="input-hex w-24"
                     value={laneSeconds}
+                    disabled={inputsLocked}
                     onChange={(e) => {
                       const v = Number(e.target.value);
                       if (Number.isNaN(v)) return;
@@ -420,6 +474,7 @@ function HomePage() {
                     type="button"
                     className="btn-hex text-xs"
                     onClick={() => setLaneSeconds(DEFAULT_LANE_SECONDS)}
+                    disabled={inputsLocked}
                   >
                     Reset
                   </button>
@@ -451,7 +506,7 @@ function HomePage() {
                     type="button"
                     className="btn-hex"
                     onClick={addExclusion}
-                    disabled={!exclA || !exclB || exclA === exclB}
+                    disabled={inputsLocked || !exclA || !exclB || exclA === exclB}
                   >
                     +
                   </button>
@@ -477,6 +532,7 @@ function HomePage() {
                               prev.filter((_, idx) => idx !== i)
                             )
                           }
+                          disabled={inputsLocked}
                         >
                           ✕
                         </button>
@@ -511,11 +567,12 @@ function HomePage() {
                   {champions.length} champions loaded · {totalLanes || 0} lane
                   {totalLanes === 1 ? "" : "s"} ·{" "}
                   <button
-                    className="underline hover:text-gold-bright"
+                    className="underline hover:text-gold-bright disabled:opacity-50"
                     onClick={handleReset}
                     type="button"
+                    disabled={inputsLocked}
                   >
-                    clear history
+                    reset all
                   </button>
                 </p>
               )}
@@ -523,7 +580,8 @@ function HomePage() {
           </section>
 
           {/* RIGHT: rounds */}
-          <section className="space-y-8">
+          <section ref={resultsRef} className="space-y-8 scroll-mt-8 relative">
+            {celebrate && <CelebrationBurst />}
             {rounds.length === 0 && <EmptyDraft />}
             {rounds.map((r, idx) => (
               <RoundView key={r.id} roundNumber={idx + 1} round={r} />
@@ -531,43 +589,60 @@ function HomePage() {
           </section>
         </div>
 
-        {/* Shuffle Arena (inline, between setup grid and results history) */}
-        <section
-          ref={arenaRef}
-          className="mt-10 hextech-frame border-gold/60 bg-background/80 p-4 sm:p-6 scroll-mt-8"
-        >
-          <h2 className="font-display text-center text-sm uppercase tracking-[0.4em] text-gold">
-            {activeRound && activeLane
-              ? `Round ${rounds.findIndex((r) => r.id === activeRound.id) + 1} · Lane ${activeLaneIdx + 1} / ${activeRound.lanes.length}`
-              : "Shuffle Arena"}
-          </h2>
-          <p className="text-center font-serif italic text-xs text-muted-foreground">
-            {activeLane ? "The Hextech engine spins…" : "Press Shuffle to begin the ceremony."}
-          </p>
-          <div className="gold-divider my-3" />
-          {activeLane && activeRound ? (
-            <LaneRow
-              key={`${activeRound.id}-${activeLaneIdx}`}
-              index={activeLaneIdx}
-              finalRole={activeLane.role}
-              alphaName={activeLane.alphaName}
-              betaName={activeLane.betaName}
-              alphaChampion={activeLane.alphaChamp}
-              betaChampion={activeLane.betaChamp}
-              allMemberNames={members}
-              championPool={champions}
-              scale={laneSeconds / DEFAULT_LANE_SECONDS}
-              onComplete={handleLaneComplete}
-            />
-          ) : (
-            <div className="flex h-40 items-center justify-center text-xs uppercase tracking-[0.4em] text-muted-foreground">
-              Idle
-            </div>
-          )}
-        </section>
-
         <Footer />
       </div>
+    </div>
+  );
+}
+
+function CelebrationBurst() {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
+      <div className="absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2">
+        <div
+          className="h-40 w-40 rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle, var(--gold-bright) 0%, var(--gold) 30%, transparent 70%)",
+            animation: "scale-in 0.4s ease-out, fade-out 1.6s ease-out 0.4s forwards",
+            filter: "blur(8px)",
+          }}
+        />
+      </div>
+      {Array.from({ length: 24 }).map((_, i) => {
+        const angle = (i / 24) * Math.PI * 2;
+        const dist = 200 + Math.random() * 160;
+        const dx = Math.cos(angle) * dist;
+        const dy = Math.sin(angle) * dist;
+        const delay = Math.random() * 0.15;
+        const color = i % 2 === 0 ? "var(--gold-bright)" : "var(--team-alpha)";
+        return (
+          <span
+            key={i}
+            className="absolute left-1/2 top-1/3 block h-2 w-2 rounded-full"
+            style={{
+              background: color,
+              boxShadow: `0 0 12px ${color}`,
+              transform: "translate(-50%, -50%)",
+              animation: `burst-${i} 1.6s ease-out ${delay}s forwards`,
+            }}
+          />
+        );
+      })}
+      <style>{`
+        ${Array.from({ length: 24 })
+          .map((_, i) => {
+            const angle = (i / 24) * Math.PI * 2;
+            const dist = 200 + ((i * 37) % 160);
+            const dx = Math.cos(angle) * dist;
+            const dy = Math.sin(angle) * dist;
+            return `@keyframes burst-${i} {
+              0% { transform: translate(-50%, -50%) scale(0.6); opacity: 1; }
+              100% { transform: translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.2); opacity: 0; }
+            }`;
+          })
+          .join("\n")}
+      `}</style>
     </div>
   );
 }
