@@ -80,10 +80,21 @@ export function LaneRow({
       return () => clearTimeout(t);
     }
     if (phase === "pre-champ-alpha") {
+      if (!alphaChampion) {
+        const t = setTimeout(
+          () => setPhase(betaChampion ? "pre-champ-beta" : "done"),
+          PRE_DELAY_MS
+        );
+        return () => clearTimeout(t);
+      }
       const t = setTimeout(() => setPhase("champ-alpha"), PRE_DELAY_MS);
       return () => clearTimeout(t);
     }
     if (phase === "pre-champ-beta") {
+      if (!betaChampion) {
+        const t = setTimeout(() => setPhase("done"), PRE_DELAY_MS);
+        return () => clearTimeout(t);
+      }
       const t = setTimeout(() => setPhase("champ-beta"), PRE_DELAY_MS);
       return () => clearTimeout(t);
     }

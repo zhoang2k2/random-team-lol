@@ -43,33 +43,66 @@ type Round = {
 };
 
 const INTER_LANE_GAP_MS = 1000;
-const DEFAULT_LANE_SECONDS = 4.5;
-const MIN_LANE_SECONDS = 3;
+const DEFAULT_LANE_SECONDS = 3;
+const MIN_LANE_SECONDS = 2;
 const MAX_LANE_SECONDS = 30;
+const MAX_SUMMONERS = 10;
+const STORAGE_KEY = "summoners-draft-state-v1";
+
+type PersistedState = {
+  members: string[];
+  teamSize: number;
+  randomRole: boolean;
+  randomMembers: boolean;
+  exclusions: ExclusionPair[];
+  laneSeconds: number;
+  rounds: Round[];
+  usedChampionIds: string[];
+  roundIdSeed: number;
+};
+
+function loadPersisted(): Partial<PersistedState> | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
 
 function HomePage() {
-  const [members, setMembers] = useState<string[]>([]);
+  const persisted = useMemo(() => loadPersisted(), []);
+
+  const [members, setMembers] = useState<string[]>(persisted?.members ?? []);
   const [memberInput, setMemberInput] = useState("");
-  const [teamSize, setTeamSize] = useState(5);
-  const [randomRole, setRandomRole] = useState(false);
-  const [randomMembers, setRandomMembers] = useState(false);
-  const [exclusions, setExclusions] = useState<ExclusionPair[]>([]);
+  const [teamSize, setTeamSize] = useState(persisted?.teamSize ?? 5);
+  const [randomRole, setRandomRole] = useState(persisted?.randomRole ?? false);
+  const [randomMembers, setRandomMembers] = useState(persisted?.randomMembers ?? false);
+  const [exclusions, setExclusions] = useState<ExclusionPair[]>(persisted?.exclusions ?? []);
   const [exclA, setExclA] = useState("");
   const [exclB, setExclB] = useState("");
-  const [laneSeconds, setLaneSeconds] = useState<number>(DEFAULT_LANE_SECONDS);
+  const [laneSeconds, setLaneSeconds] = useState<number>(
+    persisted?.laneSeconds ?? DEFAULT_LANE_SECONDS
+  );
 
   const [champions, setChampions] = useState<Champion[]>([]);
   const [loadingChamps, setLoadingChamps] = useState(true);
   const [champsError, setChampsError] = useState<string | null>(null);
 
-  const [rounds, setRounds] = useState<Round[]>([]);
+  const [rounds, setRounds] = useState<Round[]>(persisted?.rounds ?? []);
   const [shuffling, setShuffling] = useState(false);
   const [activeRoundId, setActiveRoundId] = useState<number | null>(null);
-  const [activeLaneIdx, setActiveLaneIdx] = useState<number>(-1); // -1 = closed
-  const usedChampionsRef = useRef<Set<string>>(new Set());
-  const roundIdRef = useRef(0);
+  const [activeLaneIdx, setActiveLaneIdx] = useState<number>(-1);
+  const [celebrate, setCelebrate] = useState(false);
+  const usedChampionsRef = useRef<Set<string>>(
+    new Set(persisted?.usedChampionIds ?? [])
+  );
+  const roundIdRef = useRef(persisted?.roundIdSeed ?? 0);
   const gapTimerRef = useRef<number | null>(null);
   const arenaRef = useRef<HTMLDivElement | null>(null);
+  const resultsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -90,9 +123,34 @@ function HomePage() {
     };
   }, []);
 
+  // Persist to localStorage whenever durable state changes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const state: PersistedState = {
+      members,
+      teamSize,
+      randomRole,
+      randomMembers,
+      exclusions,
+      laneSeconds,
+      rounds,
+      usedChampionIds: Array.from(usedChampionsRef.current),
+      roundIdSeed: roundIdRef.current,
+    };
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch {
+      // ignore quota errors
+    }
+  }, [members, teamSize, randomRole, randomMembers, exclusions, laneSeconds, rounds]);
+
   const addMember = () => {
     const v = memberInput.trim();
     if (!v) return;
+    if (members.length >= MAX_SUMMONERS) {
+      setMemberInput("");
+      return;
+    }
     if (members.includes(v)) {
       setMemberInput("");
       return;
@@ -122,6 +180,7 @@ function HomePage() {
   };
 
   const canShuffle = members.length >= 2 && champions.length > 0 && !shuffling;
+  const inputsLocked = shuffling;
 
   const totalLanes = useMemo(
     () => Math.min(teamSize, Math.ceil(members.length / 2)),
@@ -137,9 +196,12 @@ function HomePage() {
       randomMembers,
       exclusions
     );
-    const totalChamps = pairings.length * 2;
+    // Count actual champion picks needed (skip null sides for odd counts)
+    const totalChamps = pairings.reduce(
+      (n, p) => n + (p.alpha ? 1 : 0) + (p.beta ? 1 : 0),
+      0
+    );
 
-    // No duplicate champions across rounds. If pool exhausted, reset.
     let used = usedChampionsRef.current;
     const available = champions.length - used.size;
     if (available < totalChamps) {
@@ -149,13 +211,18 @@ function HomePage() {
     const champPicks = pickRandomChampions(champions, totalChamps, used);
     champPicks.forEach((c) => used.add(c.id));
 
-    const lanes: RoundLane[] = pairings.map((p, i) => ({
-      role: p.role,
-      alphaName: p.alpha,
-      betaName: p.beta,
-      alphaChamp: p.alpha ? champPicks[i * 2] : null,
-      betaChamp: p.beta ? champPicks[i * 2 + 1] : null,
-    }));
+    let cursor = 0;
+    const lanes: RoundLane[] = pairings.map((p) => {
+      const alphaChamp = p.alpha ? champPicks[cursor++] : null;
+      const betaChamp = p.beta ? champPicks[cursor++] : null;
+      return {
+        role: p.role,
+        alphaName: p.alpha,
+        betaName: p.beta,
+        alphaChamp,
+        betaChamp,
+      };
+    });
     roundIdRef.current += 1;
     const newRound: Round = {
       id: roundIdRef.current,
@@ -164,9 +231,9 @@ function HomePage() {
     };
     setRounds((prev) => [...prev, newRound]);
     setShuffling(true);
+    setCelebrate(false);
     setActiveRoundId(newRound.id);
     setActiveLaneIdx(0);
-    // Smooth-scroll to the shuffle arena
     requestAnimationFrame(() => {
       arenaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     });
@@ -177,7 +244,6 @@ function HomePage() {
     const laneIdx = activeLaneIdx;
     if (roundId == null || laneIdx < 0) return;
 
-    // Close modal, mark lane as revealed in the round table
     setActiveLaneIdx(-1);
     setRounds((prev) =>
       prev.map((r) =>
@@ -185,19 +251,22 @@ function HomePage() {
       )
     );
 
-    // Find the round to know its lane count
     const round = rounds.find((r) => r.id === roundId);
     const totalLaneCount = round?.lanes.length ?? 0;
     const nextIdx = laneIdx + 1;
 
     if (nextIdx >= totalLaneCount) {
-      // Round complete
       setShuffling(false);
       setActiveRoundId(null);
+      setCelebrate(true);
+      // auto scroll to results
+      window.setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 200);
+      window.setTimeout(() => setCelebrate(false), 2400);
       return;
     }
 
-    // 3s pause then open modal for next lane
     gapTimerRef.current = window.setTimeout(() => {
       setActiveLaneIdx(nextIdx);
     }, INTER_LANE_GAP_MS);
@@ -205,7 +274,20 @@ function HomePage() {
 
   const handleReset = () => {
     setRounds([]);
+    setMembers([]);
+    setExclusions([]);
+    setMemberInput("");
+    setExclA("");
+    setExclB("");
     usedChampionsRef.current = new Set();
+    roundIdRef.current = 0;
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        // ignore
+      }
+    }
   };
 
   const activeRound = rounds.find((r) => r.id === activeRoundId) ?? null;
@@ -213,27 +295,74 @@ function HomePage() {
     activeRound && activeLaneIdx >= 0
       ? activeRound.lanes[activeLaneIdx]
       : null;
+  const showArena = shuffling || activeLane != null;
 
   return (
     <div className="min-h-screen px-4 py-8 md:px-8 lg:px-12">
       <div className="mx-auto max-w-7xl">
         <Header />
 
+        {/* Shuffle Arena — TOP of page, only visible while shuffling */}
+        {showArena && (
+          <section
+            ref={arenaRef}
+            className="mt-8 hextech-frame border-gold/60 bg-background/80 p-4 sm:p-6 scroll-mt-8 animate-fade-in"
+          >
+            <h2 className="font-display text-center text-sm uppercase tracking-[0.4em] text-gold">
+              {activeRound && activeLane
+                ? `Round ${rounds.findIndex((r) => r.id === activeRound.id) + 1} · Lane ${activeLaneIdx + 1} / ${activeRound.lanes.length}`
+                : "Shuffle Arena"}
+            </h2>
+            <p className="text-center font-serif italic text-xs text-muted-foreground">
+              {activeLane ? "The Hextech engine spins…" : "Preparing next lane…"}
+            </p>
+            <div className="gold-divider my-3" />
+            <div className="flex min-h-[360px] items-center justify-center">
+              {activeLane && activeRound ? (
+                <div className="w-full max-w-3xl mx-auto">
+                  <LaneRow
+                    key={`${activeRound.id}-${activeLaneIdx}`}
+                    index={activeLaneIdx}
+                    finalRole={activeLane.role}
+                    alphaName={activeLane.alphaName}
+                    betaName={activeLane.betaName}
+                    alphaChampion={activeLane.alphaChamp}
+                    betaChampion={activeLane.betaChamp}
+                    allMemberNames={members}
+                    championPool={champions}
+                    scale={laneSeconds / DEFAULT_LANE_SECONDS}
+                    onComplete={handleLaneComplete}
+                  />
+                </div>
+              ) : (
+                <div className="text-xs uppercase tracking-[0.4em] text-muted-foreground animate-pulse">
+                  Channeling…
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
         <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
           {/* LEFT: setup column */}
-          <section className="space-y-6">
+          <section className={`space-y-6 ${inputsLocked ? "pointer-events-none opacity-60" : ""}`}>
             <div className="hextech-frame p-5">
               <h2 className="font-display text-lg uppercase tracking-[0.3em] text-gold-bright">
-                Summoners
+                Summoners <span className="text-xs text-muted-foreground">({members.length}/{MAX_SUMMONERS})</span>
               </h2>
               <div className="gold-divider my-3" />
 
               <div className="flex gap-2">
                 <input
                   className="input-hex w-full"
-                  placeholder="Enter summoner name…"
+                  placeholder={
+                    members.length >= MAX_SUMMONERS
+                      ? `Max ${MAX_SUMMONERS} summoners`
+                      : "Enter summoner name…"
+                  }
                   value={memberInput}
                   onChange={(e) => setMemberInput(e.target.value)}
+                  disabled={inputsLocked || members.length >= MAX_SUMMONERS}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
@@ -241,7 +370,12 @@ function HomePage() {
                     }
                   }}
                 />
-                <button className="btn-hex" onClick={addMember} type="button">
+                <button
+                  className="btn-hex"
+                  onClick={addMember}
+                  type="button"
+                  disabled={inputsLocked || members.length >= MAX_SUMMONERS}
+                >
                   Add
                 </button>
               </div>
@@ -264,6 +398,7 @@ function HomePage() {
                       className="text-xs text-muted-foreground hover:text-destructive"
                       onClick={() => removeMember(m)}
                       aria-label={`Remove ${m}`}
+                      disabled={inputsLocked}
                     >
                       ✕
                     </button>
@@ -289,6 +424,7 @@ function HomePage() {
                       key={n}
                       type="button"
                       onClick={() => setTeamSize(n)}
+                      disabled={inputsLocked}
                       className={`btn-hex ${
                         teamSize === n ? "btn-hex-primary" : ""
                       }`}
@@ -325,6 +461,7 @@ function HomePage() {
                     step={0.5}
                     className="input-hex w-24"
                     value={laneSeconds}
+                    disabled={inputsLocked}
                     onChange={(e) => {
                       const v = Number(e.target.value);
                       if (Number.isNaN(v)) return;
@@ -337,6 +474,7 @@ function HomePage() {
                     type="button"
                     className="btn-hex text-xs"
                     onClick={() => setLaneSeconds(DEFAULT_LANE_SECONDS)}
+                    disabled={inputsLocked}
                   >
                     Reset
                   </button>
@@ -368,7 +506,7 @@ function HomePage() {
                     type="button"
                     className="btn-hex"
                     onClick={addExclusion}
-                    disabled={!exclA || !exclB || exclA === exclB}
+                    disabled={inputsLocked || !exclA || !exclB || exclA === exclB}
                   >
                     +
                   </button>
@@ -394,6 +532,7 @@ function HomePage() {
                               prev.filter((_, idx) => idx !== i)
                             )
                           }
+                          disabled={inputsLocked}
                         >
                           ✕
                         </button>
@@ -428,11 +567,12 @@ function HomePage() {
                   {champions.length} champions loaded · {totalLanes || 0} lane
                   {totalLanes === 1 ? "" : "s"} ·{" "}
                   <button
-                    className="underline hover:text-gold-bright"
+                    className="underline hover:text-gold-bright disabled:opacity-50"
                     onClick={handleReset}
                     type="button"
+                    disabled={inputsLocked}
                   >
-                    clear history
+                    reset all
                   </button>
                 </p>
               )}
@@ -440,7 +580,8 @@ function HomePage() {
           </section>
 
           {/* RIGHT: rounds */}
-          <section className="space-y-8">
+          <section ref={resultsRef} className="space-y-8 scroll-mt-8 relative">
+            {celebrate && <CelebrationBurst />}
             {rounds.length === 0 && <EmptyDraft />}
             {rounds.map((r, idx) => (
               <RoundView key={r.id} roundNumber={idx + 1} round={r} />
@@ -448,43 +589,60 @@ function HomePage() {
           </section>
         </div>
 
-        {/* Shuffle Arena (inline, between setup grid and results history) */}
-        <section
-          ref={arenaRef}
-          className="mt-10 hextech-frame border-gold/60 bg-background/80 p-4 sm:p-6 scroll-mt-8"
-        >
-          <h2 className="font-display text-center text-sm uppercase tracking-[0.4em] text-gold">
-            {activeRound && activeLane
-              ? `Round ${rounds.findIndex((r) => r.id === activeRound.id) + 1} · Lane ${activeLaneIdx + 1} / ${activeRound.lanes.length}`
-              : "Shuffle Arena"}
-          </h2>
-          <p className="text-center font-serif italic text-xs text-muted-foreground">
-            {activeLane ? "The Hextech engine spins…" : "Press Shuffle to begin the ceremony."}
-          </p>
-          <div className="gold-divider my-3" />
-          {activeLane && activeRound ? (
-            <LaneRow
-              key={`${activeRound.id}-${activeLaneIdx}`}
-              index={activeLaneIdx}
-              finalRole={activeLane.role}
-              alphaName={activeLane.alphaName}
-              betaName={activeLane.betaName}
-              alphaChampion={activeLane.alphaChamp}
-              betaChampion={activeLane.betaChamp}
-              allMemberNames={members}
-              championPool={champions}
-              scale={laneSeconds / DEFAULT_LANE_SECONDS}
-              onComplete={handleLaneComplete}
-            />
-          ) : (
-            <div className="flex h-40 items-center justify-center text-xs uppercase tracking-[0.4em] text-muted-foreground">
-              Idle
-            </div>
-          )}
-        </section>
-
         <Footer />
       </div>
+    </div>
+  );
+}
+
+function CelebrationBurst() {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
+      <div className="absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2">
+        <div
+          className="h-40 w-40 rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle, var(--gold-bright) 0%, var(--gold) 30%, transparent 70%)",
+            animation: "scale-in 0.4s ease-out, fade-out 1.6s ease-out 0.4s forwards",
+            filter: "blur(8px)",
+          }}
+        />
+      </div>
+      {Array.from({ length: 24 }).map((_, i) => {
+        const angle = (i / 24) * Math.PI * 2;
+        const dist = 200 + Math.random() * 160;
+        const dx = Math.cos(angle) * dist;
+        const dy = Math.sin(angle) * dist;
+        const delay = Math.random() * 0.15;
+        const color = i % 2 === 0 ? "var(--gold-bright)" : "var(--team-alpha)";
+        return (
+          <span
+            key={i}
+            className="absolute left-1/2 top-1/3 block h-2 w-2 rounded-full"
+            style={{
+              background: color,
+              boxShadow: `0 0 12px ${color}`,
+              transform: "translate(-50%, -50%)",
+              animation: `burst-${i} 1.6s ease-out ${delay}s forwards`,
+            }}
+          />
+        );
+      })}
+      <style>{`
+        ${Array.from({ length: 24 })
+          .map((_, i) => {
+            const angle = (i / 24) * Math.PI * 2;
+            const dist = 200 + ((i * 37) % 160);
+            const dx = Math.cos(angle) * dist;
+            const dy = Math.sin(angle) * dist;
+            return `@keyframes burst-${i} {
+              0% { transform: translate(-50%, -50%) scale(0.6); opacity: 1; }
+              100% { transform: translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.2); opacity: 0; }
+            }`;
+          })
+          .join("\n")}
+      `}</style>
     </div>
   );
 }
