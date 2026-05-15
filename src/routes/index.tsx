@@ -43,33 +43,66 @@ type Round = {
 };
 
 const INTER_LANE_GAP_MS = 1000;
-const DEFAULT_LANE_SECONDS = 4.5;
-const MIN_LANE_SECONDS = 3;
+const DEFAULT_LANE_SECONDS = 3;
+const MIN_LANE_SECONDS = 2;
 const MAX_LANE_SECONDS = 30;
+const MAX_SUMMONERS = 10;
+const STORAGE_KEY = "summoners-draft-state-v1";
+
+type PersistedState = {
+  members: string[];
+  teamSize: number;
+  randomRole: boolean;
+  randomMembers: boolean;
+  exclusions: ExclusionPair[];
+  laneSeconds: number;
+  rounds: Round[];
+  usedChampionIds: string[];
+  roundIdSeed: number;
+};
+
+function loadPersisted(): Partial<PersistedState> | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
 
 function HomePage() {
-  const [members, setMembers] = useState<string[]>([]);
+  const persisted = useMemo(() => loadPersisted(), []);
+
+  const [members, setMembers] = useState<string[]>(persisted?.members ?? []);
   const [memberInput, setMemberInput] = useState("");
-  const [teamSize, setTeamSize] = useState(5);
-  const [randomRole, setRandomRole] = useState(false);
-  const [randomMembers, setRandomMembers] = useState(false);
-  const [exclusions, setExclusions] = useState<ExclusionPair[]>([]);
+  const [teamSize, setTeamSize] = useState(persisted?.teamSize ?? 5);
+  const [randomRole, setRandomRole] = useState(persisted?.randomRole ?? false);
+  const [randomMembers, setRandomMembers] = useState(persisted?.randomMembers ?? false);
+  const [exclusions, setExclusions] = useState<ExclusionPair[]>(persisted?.exclusions ?? []);
   const [exclA, setExclA] = useState("");
   const [exclB, setExclB] = useState("");
-  const [laneSeconds, setLaneSeconds] = useState<number>(DEFAULT_LANE_SECONDS);
+  const [laneSeconds, setLaneSeconds] = useState<number>(
+    persisted?.laneSeconds ?? DEFAULT_LANE_SECONDS
+  );
 
   const [champions, setChampions] = useState<Champion[]>([]);
   const [loadingChamps, setLoadingChamps] = useState(true);
   const [champsError, setChampsError] = useState<string | null>(null);
 
-  const [rounds, setRounds] = useState<Round[]>([]);
+  const [rounds, setRounds] = useState<Round[]>(persisted?.rounds ?? []);
   const [shuffling, setShuffling] = useState(false);
   const [activeRoundId, setActiveRoundId] = useState<number | null>(null);
-  const [activeLaneIdx, setActiveLaneIdx] = useState<number>(-1); // -1 = closed
-  const usedChampionsRef = useRef<Set<string>>(new Set());
-  const roundIdRef = useRef(0);
+  const [activeLaneIdx, setActiveLaneIdx] = useState<number>(-1);
+  const [celebrate, setCelebrate] = useState(false);
+  const usedChampionsRef = useRef<Set<string>>(
+    new Set(persisted?.usedChampionIds ?? [])
+  );
+  const roundIdRef = useRef(persisted?.roundIdSeed ?? 0);
   const gapTimerRef = useRef<number | null>(null);
   const arenaRef = useRef<HTMLDivElement | null>(null);
+  const resultsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -90,9 +123,34 @@ function HomePage() {
     };
   }, []);
 
+  // Persist to localStorage whenever durable state changes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const state: PersistedState = {
+      members,
+      teamSize,
+      randomRole,
+      randomMembers,
+      exclusions,
+      laneSeconds,
+      rounds,
+      usedChampionIds: Array.from(usedChampionsRef.current),
+      roundIdSeed: roundIdRef.current,
+    };
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch {
+      // ignore quota errors
+    }
+  }, [members, teamSize, randomRole, randomMembers, exclusions, laneSeconds, rounds]);
+
   const addMember = () => {
     const v = memberInput.trim();
     if (!v) return;
+    if (members.length >= MAX_SUMMONERS) {
+      setMemberInput("");
+      return;
+    }
     if (members.includes(v)) {
       setMemberInput("");
       return;
@@ -122,6 +180,7 @@ function HomePage() {
   };
 
   const canShuffle = members.length >= 2 && champions.length > 0 && !shuffling;
+  const inputsLocked = shuffling;
 
   const totalLanes = useMemo(
     () => Math.min(teamSize, Math.ceil(members.length / 2)),
@@ -137,9 +196,12 @@ function HomePage() {
       randomMembers,
       exclusions
     );
-    const totalChamps = pairings.length * 2;
+    // Count actual champion picks needed (skip null sides for odd counts)
+    const totalChamps = pairings.reduce(
+      (n, p) => n + (p.alpha ? 1 : 0) + (p.beta ? 1 : 0),
+      0
+    );
 
-    // No duplicate champions across rounds. If pool exhausted, reset.
     let used = usedChampionsRef.current;
     const available = champions.length - used.size;
     if (available < totalChamps) {
@@ -149,13 +211,18 @@ function HomePage() {
     const champPicks = pickRandomChampions(champions, totalChamps, used);
     champPicks.forEach((c) => used.add(c.id));
 
-    const lanes: RoundLane[] = pairings.map((p, i) => ({
-      role: p.role,
-      alphaName: p.alpha,
-      betaName: p.beta,
-      alphaChamp: p.alpha ? champPicks[i * 2] : null,
-      betaChamp: p.beta ? champPicks[i * 2 + 1] : null,
-    }));
+    let cursor = 0;
+    const lanes: RoundLane[] = pairings.map((p) => {
+      const alphaChamp = p.alpha ? champPicks[cursor++] : null;
+      const betaChamp = p.beta ? champPicks[cursor++] : null;
+      return {
+        role: p.role,
+        alphaName: p.alpha,
+        betaName: p.beta,
+        alphaChamp,
+        betaChamp,
+      };
+    });
     roundIdRef.current += 1;
     const newRound: Round = {
       id: roundIdRef.current,
@@ -164,9 +231,9 @@ function HomePage() {
     };
     setRounds((prev) => [...prev, newRound]);
     setShuffling(true);
+    setCelebrate(false);
     setActiveRoundId(newRound.id);
     setActiveLaneIdx(0);
-    // Smooth-scroll to the shuffle arena
     requestAnimationFrame(() => {
       arenaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     });
@@ -177,7 +244,6 @@ function HomePage() {
     const laneIdx = activeLaneIdx;
     if (roundId == null || laneIdx < 0) return;
 
-    // Close modal, mark lane as revealed in the round table
     setActiveLaneIdx(-1);
     setRounds((prev) =>
       prev.map((r) =>
@@ -185,19 +251,22 @@ function HomePage() {
       )
     );
 
-    // Find the round to know its lane count
     const round = rounds.find((r) => r.id === roundId);
     const totalLaneCount = round?.lanes.length ?? 0;
     const nextIdx = laneIdx + 1;
 
     if (nextIdx >= totalLaneCount) {
-      // Round complete
       setShuffling(false);
       setActiveRoundId(null);
+      setCelebrate(true);
+      // auto scroll to results
+      window.setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 200);
+      window.setTimeout(() => setCelebrate(false), 2400);
       return;
     }
 
-    // 3s pause then open modal for next lane
     gapTimerRef.current = window.setTimeout(() => {
       setActiveLaneIdx(nextIdx);
     }, INTER_LANE_GAP_MS);
@@ -205,7 +274,20 @@ function HomePage() {
 
   const handleReset = () => {
     setRounds([]);
+    setMembers([]);
+    setExclusions([]);
+    setMemberInput("");
+    setExclA("");
+    setExclB("");
     usedChampionsRef.current = new Set();
+    roundIdRef.current = 0;
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        // ignore
+      }
+    }
   };
 
   const activeRound = rounds.find((r) => r.id === activeRoundId) ?? null;
@@ -213,6 +295,7 @@ function HomePage() {
     activeRound && activeLaneIdx >= 0
       ? activeRound.lanes[activeLaneIdx]
       : null;
+  const showArena = shuffling || activeLane != null;
 
   return (
     <div className="min-h-screen px-4 py-8 md:px-8 lg:px-12">
