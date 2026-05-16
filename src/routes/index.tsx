@@ -102,7 +102,9 @@ function HomePage() {
   const [loadingChamps, setLoadingChamps] = useState(true);
   const [champsError, setChampsError] = useState<string | null>(null);
 
-  const [rounds, setRounds] = useState<Round[]>(persisted?.rounds ?? []);
+  const [rounds, setRounds] = useState<Round[]>(
+    (persisted?.rounds ?? []).map((r) => ({ ...r, events: r.events ?? [] }))
+  );
   const [shuffling, setShuffling] = useState(false);
   const [activeRoundId, setActiveRoundId] = useState<number | null>(null);
   const [activeLaneIdx, setActiveLaneIdx] = useState<number>(-1);
