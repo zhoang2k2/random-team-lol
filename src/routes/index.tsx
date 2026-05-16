@@ -958,6 +958,21 @@ function RoundView({
       </div>
       <div className="gold-divider my-4" />
 
+      {round.events && round.events.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <div className="font-display text-[10px] uppercase tracking-[0.4em] text-gold">
+            Ông trời kêu vậy
+          </div>
+          <ul className="space-y-2">
+            {round.events.map((ev) => (
+              <li key={ev.id}>
+                <EventCard event={ev} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {visibleLanes.length === 0 ? (
         <div className="py-6 text-center text-xs italic uppercase tracking-[0.3em] text-muted-foreground">
           Awaiting first lane reveal…
