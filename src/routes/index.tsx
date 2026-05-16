@@ -165,13 +165,15 @@ function HomePage() {
       rounds,
       usedChampionIds: Array.from(usedChampionsRef.current),
       roundIdSeed: roundIdRef.current,
+      enableEvents,
+      eventCount,
     };
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {
       // ignore quota errors
     }
-  }, [members, teamSize, randomRole, randomMembers, exclusions, laneSeconds, rounds]);
+  }, [members, teamSize, randomRole, randomMembers, exclusions, laneSeconds, rounds, enableEvents, eventCount]);
 
   const addMember = () => {
     const v = memberInput.trim();
