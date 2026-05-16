@@ -259,15 +259,40 @@ function HomePage() {
       id: roundIdRef.current,
       lanes,
       revealed: 0,
+      events: [],
     };
     setRounds((prev) => [...prev, newRound]);
     setShuffling(true);
-    setCelebrate(false);
     setActiveRoundId(newRound.id);
     setActiveLaneIdx(0);
     requestAnimationFrame(() => {
       arenaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     });
+  };
+
+  const startEventRoll = (roundId: number) => {
+    const desired = Math.max(0, Math.min(Math.floor(eventCount) || 0, EVENTS.length));
+    if (!enableEvents || desired === 0) {
+      finishRound(roundId);
+      return;
+    }
+    const finals = pickEvents(desired);
+    setEventRolling({
+      roundId,
+      pool: EVENTS,
+      final: finals,
+      revealedIndex: 0,
+      currentName: EVENTS[0].name,
+    });
+  };
+
+  const finishRound = (_roundId: number) => {
+    setShuffling(false);
+    setActiveRoundId(null);
+    setEventRolling(null);
+    window.setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 200);
   };
 
   const handleLaneComplete = () => {
@@ -287,14 +312,8 @@ function HomePage() {
     const nextIdx = laneIdx + 1;
 
     if (nextIdx >= totalLaneCount) {
-      setShuffling(false);
-      setActiveRoundId(null);
-      setCelebrate(true);
-      // auto scroll to results
-      window.setTimeout(() => {
-        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 200);
-      window.setTimeout(() => setCelebrate(false), 2400);
+      // All lanes done — now roll events if enabled, then finish.
+      startEventRoll(roundId);
       return;
     }
 
@@ -302,6 +321,53 @@ function HomePage() {
       setActiveLaneIdx(nextIdx);
     }, INTER_LANE_GAP_MS);
   };
+
+  // Drive event roll: every EVENT_ROLL_MS we flicker the name; once we land on
+  // each final event we commit it and continue with the next.
+  useEffect(() => {
+    if (!eventRolling) return;
+    const { roundId, pool, final, revealedIndex } = eventRolling;
+
+    if (revealedIndex >= final.length) {
+      // commit events into the round, then finish
+      setRounds((prev) =>
+        prev.map((r) => (r.id === roundId ? { ...r, events: final } : r))
+      );
+      const t = window.setTimeout(() => finishRound(roundId), 400);
+      return () => window.clearTimeout(t);
+    }
+
+    // Flicker: pick a random name from pool, then after ROLL_MS commit & advance
+    let flickers = 6; // ~ a few flickers per event
+    const tick = () => {
+      flickers -= 1;
+      const rnd = pool[Math.floor(Math.random() * pool.length)];
+      setEventRolling((prev) =>
+        prev && prev.roundId === roundId
+          ? { ...prev, currentName: rnd.name }
+          : prev
+      );
+      if (flickers <= 0) {
+        // settle on the actual final event
+        setEventRolling((prev) =>
+          prev && prev.roundId === roundId
+            ? {
+                ...prev,
+                currentName: final[revealedIndex].name,
+                revealedIndex: revealedIndex + 1,
+              }
+            : prev
+        );
+        return;
+      }
+      eventTimerRef.current = window.setTimeout(tick, EVENT_ROLL_MS);
+    };
+    eventTimerRef.current = window.setTimeout(tick, EVENT_ROLL_MS);
+    return () => {
+      if (eventTimerRef.current) window.clearTimeout(eventTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventRolling?.roundId, eventRolling?.revealedIndex]);
 
   const handleReset = () => {
     setRounds([]);
