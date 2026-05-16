@@ -41,6 +41,7 @@ type Round = {
   id: number;
   lanes: RoundLane[];
   revealed: number; // count of lanes already revealed in table
+  events: GameEvent[]; // rolled events for this round (empty if disabled)
 };
 
 const INTER_LANE_GAP_MS = 1000;
@@ -48,6 +49,7 @@ const DEFAULT_LANE_SECONDS = 3;
 const MIN_LANE_SECONDS = 2;
 const MAX_LANE_SECONDS = 30;
 const MAX_SUMMONERS = 10;
+const EVENT_ROLL_MS = 200; // 0.2s per event roll
 const STORAGE_KEY = "summoners-draft-state-v1";
 
 type PersistedState = {
@@ -60,6 +62,8 @@ type PersistedState = {
   rounds: Round[];
   usedChampionIds: string[];
   roundIdSeed: number;
+  enableEvents: boolean;
+  eventCount: number;
 };
 
 function loadPersisted(): Partial<PersistedState> | null {
