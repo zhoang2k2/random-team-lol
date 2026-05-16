@@ -8,6 +8,7 @@ import {
 } from "@/lib/lol-api";
 import { buildLanePairings, type ExclusionPair } from "@/lib/randomize";
 import { LaneRow } from "@/components/LaneRow";
+import { EVENTS, formatEventTime, pickEvents, type GameEvent } from "@/lib/events";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
