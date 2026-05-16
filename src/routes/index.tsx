@@ -719,11 +719,12 @@ function HomePage() {
 
           {/* RIGHT: rounds */}
           <section ref={resultsRef} className="space-y-8 scroll-mt-8 relative">
-            {celebrate && <CelebrationBurst />}
-            {rounds.length === 0 && <EmptyDraft />}
-            {rounds.map((r, idx) => (
-              <RoundView key={r.id} roundNumber={idx + 1} round={r} />
-            ))}
+            {hydrating && rounds.length > 0 && <ResultsSkeleton />}
+            {!hydrating && rounds.length === 0 && <EmptyDraft />}
+            {!hydrating &&
+              rounds.map((r, idx) => (
+                <RoundView key={r.id} roundNumber={idx + 1} round={r} />
+              ))}
           </section>
         </div>
 
@@ -733,54 +734,82 @@ function HomePage() {
   );
 }
 
-function CelebrationBurst() {
+function EventRollPanel({
+  pool,
+  final,
+  revealedIndex,
+  currentName,
+}: {
+  pool: GameEvent[];
+  final: GameEvent[];
+  revealedIndex: number;
+  currentName: string;
+}) {
+  void pool;
   return (
-    <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
-      <div className="absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2">
-        <div
-          className="h-40 w-40 rounded-full"
-          style={{
-            background:
-              "radial-gradient(circle, var(--gold-bright) 0%, var(--gold) 30%, transparent 70%)",
-            animation: "scale-in 0.4s ease-out, fade-out 1.6s ease-out 0.4s forwards",
-            filter: "blur(8px)",
-          }}
-        />
+    <div className="w-full max-w-2xl mx-auto space-y-4">
+      <div className="hextech-frame px-4 py-6 text-center">
+        <div className="text-[10px] uppercase tracking-[0.4em] text-muted-foreground">
+          Sự kiện {Math.min(revealedIndex + 1, final.length)} / {final.length}
+        </div>
+        <div className="mt-2 font-display text-2xl uppercase tracking-widest text-gold-bright text-glow-gold animate-pulse">
+          {currentName}
+        </div>
       </div>
-      {Array.from({ length: 24 }).map((_, i) => {
-        const angle = (i / 24) * Math.PI * 2;
-        const dist = 200 + Math.random() * 160;
-        const dx = Math.cos(angle) * dist;
-        const dy = Math.sin(angle) * dist;
-        const delay = Math.random() * 0.15;
-        const color = i % 2 === 0 ? "var(--gold-bright)" : "var(--team-alpha)";
-        return (
-          <span
-            key={i}
-            className="absolute left-1/2 top-1/3 block h-2 w-2 rounded-full"
-            style={{
-              background: color,
-              boxShadow: `0 0 12px ${color}`,
-              transform: "translate(-50%, -50%)",
-              animation: `burst-${i} 1.6s ease-out ${delay}s forwards`,
-            }}
-          />
-        );
-      })}
-      <style>{`
-        ${Array.from({ length: 24 })
-          .map((_, i) => {
-            const angle = (i / 24) * Math.PI * 2;
-            const dist = 200 + ((i * 37) % 160);
-            const dx = Math.cos(angle) * dist;
-            const dy = Math.sin(angle) * dist;
-            return `@keyframes burst-${i} {
-              0% { transform: translate(-50%, -50%) scale(0.6); opacity: 1; }
-              100% { transform: translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.2); opacity: 0; }
-            }`;
-          })
-          .join("\n")}
-      `}</style>
+      {revealedIndex > 0 && (
+        <ul className="space-y-2">
+          {final.slice(0, revealedIndex).map((ev) => (
+            <li key={ev.id}>
+              <EventCard event={ev} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function EventCard({ event }: { event: GameEvent }) {
+  return (
+    <div className="hextech-frame flex items-start gap-3 px-3 py-2 animate-fade-in">
+      <div className="shrink-0 border border-gold/50 bg-gold/10 px-2 py-1 font-display text-[10px] uppercase tracking-[0.2em] text-gold-bright">
+        {formatEventTime(event.time)}
+      </div>
+      <div className="min-w-0">
+        <div className="font-display text-sm uppercase tracking-[0.18em] text-gold-bright">
+          {event.name}
+        </div>
+        <div className="mt-0.5 font-serif text-xs text-muted-foreground">
+          {event.content}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SummonerSkeleton({ count }: { count: number }) {
+  return (
+    <>
+      {Array.from({ length: count }).map((_, i) => (
+        <li
+          key={i}
+          className="h-7 w-24 border border-gold/30 bg-gold/5 animate-pulse"
+        />
+      ))}
+    </>
+  );
+}
+
+function ResultsSkeleton() {
+  return (
+    <div className="hextech-frame p-5 animate-pulse">
+      <div className="h-4 w-32 bg-gold/20" />
+      <div className="gold-divider my-4" />
+      <div className="space-y-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-12 w-full bg-gold/10 border border-gold/20" />
+        ))}
+      </div>
     </div>
   );
 }
