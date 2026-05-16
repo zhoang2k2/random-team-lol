@@ -554,10 +554,42 @@ function HomePage() {
                 onChange={setRandomMembers}
               />
 
+              {/* Ông trời kêu vậy */}
+              <ToggleRow
+                label="Ông trời kêu vậy"
+                hint="Roll random in-game events after each round."
+                value={enableEvents}
+                onChange={setEnableEvents}
+              />
+              <div className={enableEvents ? "" : "opacity-50 pointer-events-none"}>
+                <label className="font-display text-xs uppercase tracking-[0.25em] text-muted-foreground">
+                  Số sự kiện
+                </label>
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={1}
+                    max={EVENTS.length}
+                    step={1}
+                    className="input-hex w-24"
+                    value={eventCount}
+                    disabled={!enableEvents || inputsLocked}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      if (Number.isNaN(v)) return;
+                      setEventCount(Math.min(EVENTS.length, Math.max(1, Math.floor(v))));
+                    }}
+                  />
+                  <span className="text-xs italic text-muted-foreground">
+                    1–{EVENTS.length}
+                  </span>
+                </div>
+              </div>
+
               {/* Random duration */}
               <div>
                 <label className="font-display text-xs uppercase tracking-[0.25em] text-muted-foreground">
-                  Random duration per lane (seconds)
+                  Lane spin (seconds)
                 </label>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <input
@@ -585,7 +617,7 @@ function HomePage() {
                     Reset
                   </button>
                   <span className="text-xs italic text-muted-foreground">
-                    Default {DEFAULT_LANE_SECONDS}s · range {MIN_LANE_SECONDS}–{MAX_LANE_SECONDS}s
+                    {MIN_LANE_SECONDS}–{MAX_LANE_SECONDS}s
                   </span>
                 </div>
               </div>
