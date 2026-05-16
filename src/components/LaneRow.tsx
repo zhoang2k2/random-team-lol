@@ -259,6 +259,23 @@ export function LaneRow({
     );
   };
 
+  const soloAlpha = !!alphaName && !betaName;
+  const soloBeta = !alphaName && !!betaName;
+  const solo = soloAlpha || soloBeta;
+
+  if (solo) {
+    const name = soloAlpha ? alphaName : betaName;
+    const color = soloAlpha ? "var(--team-alpha)" : "var(--team-beta)";
+    const champ = soloAlpha ? alphaChampion : betaChampion;
+    return (
+      <div className="mx-auto grid w-full max-w-sm grid-cols-1 gap-3">
+        {roleNode}
+        {renderMemberSlot(name, color)}
+        {renderChampSlot(soloAlpha ? "alpha" : "beta", champ)}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 gap-3">
       <div className="mx-auto w-full max-w-sm">{roleNode}</div>
