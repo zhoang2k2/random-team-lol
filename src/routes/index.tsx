@@ -8,6 +8,7 @@ import {
 } from "@/lib/lol-api";
 import { buildLanePairings, type ExclusionPair } from "@/lib/randomize";
 import { LaneRow } from "@/components/LaneRow";
+import { EVENTS, formatEventTime, pickEvents, type GameEvent } from "@/lib/events";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -40,6 +41,7 @@ type Round = {
   id: number;
   lanes: RoundLane[];
   revealed: number; // count of lanes already revealed in table
+  events: GameEvent[]; // rolled events for this round (empty if disabled)
 };
 
 const INTER_LANE_GAP_MS = 1000;
@@ -47,6 +49,7 @@ const DEFAULT_LANE_SECONDS = 3;
 const MIN_LANE_SECONDS = 2;
 const MAX_LANE_SECONDS = 30;
 const MAX_SUMMONERS = 10;
+const EVENT_ROLL_MS = 200; // 0.2s per event roll
 const STORAGE_KEY = "summoners-draft-state-v1";
 
 type PersistedState = {
@@ -59,6 +62,8 @@ type PersistedState = {
   rounds: Round[];
   usedChampionIds: string[];
   roundIdSeed: number;
+  enableEvents: boolean;
+  eventCount: number;
 };
 
 function loadPersisted(): Partial<PersistedState> | null {
@@ -86,21 +91,39 @@ function HomePage() {
   const [laneSeconds, setLaneSeconds] = useState<number>(
     persisted?.laneSeconds ?? DEFAULT_LANE_SECONDS
   );
+  const [enableEvents, setEnableEvents] = useState<boolean>(
+    persisted?.enableEvents ?? false
+  );
+  const [eventCount, setEventCount] = useState<number>(
+    persisted?.eventCount ?? 2
+  );
 
   const [champions, setChampions] = useState<Champion[]>([]);
   const [loadingChamps, setLoadingChamps] = useState(true);
   const [champsError, setChampsError] = useState<string | null>(null);
 
-  const [rounds, setRounds] = useState<Round[]>(persisted?.rounds ?? []);
+  const [rounds, setRounds] = useState<Round[]>(
+    (persisted?.rounds ?? []).map((r) => ({ ...r, events: r.events ?? [] }))
+  );
   const [shuffling, setShuffling] = useState(false);
   const [activeRoundId, setActiveRoundId] = useState<number | null>(null);
   const [activeLaneIdx, setActiveLaneIdx] = useState<number>(-1);
-  const [celebrate, setCelebrate] = useState(false);
+  const [eventRolling, setEventRolling] = useState<{
+    roundId: number;
+    pool: GameEvent[];
+    final: GameEvent[];
+    revealedIndex: number; // how many final events are settled
+    currentName: string;   // name flickering during roll
+  } | null>(null);
+  // brief hydration skeleton — only when we actually had persisted data
+  const hadPersisted = persisted != null && ((persisted.members?.length ?? 0) > 0 || (persisted.rounds?.length ?? 0) > 0);
+  const [hydrating, setHydrating] = useState<boolean>(hadPersisted);
   const usedChampionsRef = useRef<Set<string>>(
     new Set(persisted?.usedChampionIds ?? [])
   );
   const roundIdRef = useRef(persisted?.roundIdSeed ?? 0);
   const gapTimerRef = useRef<number | null>(null);
+  const eventTimerRef = useRef<number | null>(null);
   const arenaRef = useRef<HTMLDivElement | null>(null);
   const resultsRef = useRef<HTMLDivElement | null>(null);
 
@@ -120,8 +143,16 @@ function HomePage() {
     return () => {
       alive = false;
       if (gapTimerRef.current) window.clearTimeout(gapTimerRef.current);
+      if (eventTimerRef.current) window.clearTimeout(eventTimerRef.current);
     };
   }, []);
+
+  // Brief skeleton when we hydrated from storage so the UI doesn't pop in coldly.
+  useEffect(() => {
+    if (!hydrating) return;
+    const t = window.setTimeout(() => setHydrating(false), 600);
+    return () => window.clearTimeout(t);
+  }, [hydrating]);
 
   // Persist to localStorage whenever durable state changes
   useEffect(() => {
@@ -136,13 +167,15 @@ function HomePage() {
       rounds,
       usedChampionIds: Array.from(usedChampionsRef.current),
       roundIdSeed: roundIdRef.current,
+      enableEvents,
+      eventCount,
     };
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {
       // ignore quota errors
     }
-  }, [members, teamSize, randomRole, randomMembers, exclusions, laneSeconds, rounds]);
+  }, [members, teamSize, randomRole, randomMembers, exclusions, laneSeconds, rounds, enableEvents, eventCount]);
 
   const addMember = () => {
     const v = memberInput.trim();
@@ -228,15 +261,40 @@ function HomePage() {
       id: roundIdRef.current,
       lanes,
       revealed: 0,
+      events: [],
     };
     setRounds((prev) => [...prev, newRound]);
     setShuffling(true);
-    setCelebrate(false);
     setActiveRoundId(newRound.id);
     setActiveLaneIdx(0);
     requestAnimationFrame(() => {
       arenaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     });
+  };
+
+  const startEventRoll = (roundId: number) => {
+    const desired = Math.max(0, Math.min(Math.floor(eventCount) || 0, EVENTS.length));
+    if (!enableEvents || desired === 0) {
+      finishRound(roundId);
+      return;
+    }
+    const finals = pickEvents(desired);
+    setEventRolling({
+      roundId,
+      pool: EVENTS,
+      final: finals,
+      revealedIndex: 0,
+      currentName: EVENTS[0].name,
+    });
+  };
+
+  const finishRound = (_roundId: number) => {
+    setShuffling(false);
+    setActiveRoundId(null);
+    setEventRolling(null);
+    window.setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 200);
   };
 
   const handleLaneComplete = () => {
@@ -256,14 +314,8 @@ function HomePage() {
     const nextIdx = laneIdx + 1;
 
     if (nextIdx >= totalLaneCount) {
-      setShuffling(false);
-      setActiveRoundId(null);
-      setCelebrate(true);
-      // auto scroll to results
-      window.setTimeout(() => {
-        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 200);
-      window.setTimeout(() => setCelebrate(false), 2400);
+      // All lanes done — now roll events if enabled, then finish.
+      startEventRoll(roundId);
       return;
     }
 
@@ -271,6 +323,53 @@ function HomePage() {
       setActiveLaneIdx(nextIdx);
     }, INTER_LANE_GAP_MS);
   };
+
+  // Drive event roll: every EVENT_ROLL_MS we flicker the name; once we land on
+  // each final event we commit it and continue with the next.
+  useEffect(() => {
+    if (!eventRolling) return;
+    const { roundId, pool, final, revealedIndex } = eventRolling;
+
+    if (revealedIndex >= final.length) {
+      // commit events into the round, then finish
+      setRounds((prev) =>
+        prev.map((r) => (r.id === roundId ? { ...r, events: final } : r))
+      );
+      const t = window.setTimeout(() => finishRound(roundId), 400);
+      return () => window.clearTimeout(t);
+    }
+
+    // Flicker: pick a random name from pool, then after ROLL_MS commit & advance
+    let flickers = 6; // ~ a few flickers per event
+    const tick = () => {
+      flickers -= 1;
+      const rnd = pool[Math.floor(Math.random() * pool.length)];
+      setEventRolling((prev) =>
+        prev && prev.roundId === roundId
+          ? { ...prev, currentName: rnd.name }
+          : prev
+      );
+      if (flickers <= 0) {
+        // settle on the actual final event
+        setEventRolling((prev) =>
+          prev && prev.roundId === roundId
+            ? {
+                ...prev,
+                currentName: final[revealedIndex].name,
+                revealedIndex: revealedIndex + 1,
+              }
+            : prev
+        );
+        return;
+      }
+      eventTimerRef.current = window.setTimeout(tick, EVENT_ROLL_MS);
+    };
+    eventTimerRef.current = window.setTimeout(tick, EVENT_ROLL_MS);
+    return () => {
+      if (eventTimerRef.current) window.clearTimeout(eventTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventRolling?.roundId, eventRolling?.revealedIndex]);
 
   const handleReset = () => {
     setRounds([]);
@@ -303,22 +402,28 @@ function HomePage() {
         <Header />
 
         {/* Shuffle Arena — TOP of page, only visible while shuffling */}
-        {showArena && (
+        {(showArena || eventRolling) && (
           <section
             ref={arenaRef}
             className="mt-8 hextech-frame border-gold/60 bg-background/80 p-4 sm:p-6 scroll-mt-8 animate-fade-in"
           >
             <h2 className="font-display text-center text-sm uppercase tracking-[0.4em] text-gold">
-              {activeRound && activeLane
+              {eventRolling
+                ? `Round ${rounds.findIndex((r) => r.id === eventRolling.roundId) + 1} · Ông trời kêu vậy`
+                : activeRound && activeLane
                 ? `Round ${rounds.findIndex((r) => r.id === activeRound.id) + 1} · Lane ${activeLaneIdx + 1} / ${activeRound.lanes.length}`
                 : "Shuffle Arena"}
             </h2>
-            <p className="text-center font-serif italic text-xs text-muted-foreground">
-              {activeLane ? "The Hextech engine spins…" : "Preparing next lane…"}
-            </p>
             <div className="gold-divider my-3" />
             <div className="flex min-h-[360px] items-center justify-center">
-              {activeLane && activeRound ? (
+              {eventRolling ? (
+                <EventRollPanel
+                  pool={eventRolling.pool}
+                  final={eventRolling.final}
+                  revealedIndex={eventRolling.revealedIndex}
+                  currentName={eventRolling.currentName}
+                />
+              ) : activeLane && activeRound ? (
                 <div className="w-full max-w-3xl mx-auto">
                   <LaneRow
                     key={`${activeRound.id}-${activeLaneIdx}`}
@@ -381,12 +486,15 @@ function HomePage() {
               </div>
 
               <ul className="mt-4 flex flex-wrap gap-2">
-                {members.length === 0 && (
+                {hydrating && members.length > 0 && (
+                  <SummonerSkeleton count={Math.min(members.length, 5)} />
+                )}
+                {!hydrating && members.length === 0 && (
                   <li className="text-sm italic text-muted-foreground">
                     No summoners yet. Add at least 2 to begin.
                   </li>
                 )}
-                {members.map((m, i) => (
+                {!hydrating && members.map((m, i) => (
                   <li
                     key={m}
                     className="group flex items-center gap-2 border border-gold/50 bg-card/60 px-2 py-1"
@@ -416,7 +524,7 @@ function HomePage() {
               {/* Team size */}
               <div>
                 <label className="font-display text-xs uppercase tracking-[0.25em] text-muted-foreground">
-                  Players per team (max 5)
+                  Players per team
                 </label>
                 <div className="mt-2 grid grid-cols-4 gap-2">
                   {[2, 3, 4, 5].map((n) => (
@@ -448,10 +556,42 @@ function HomePage() {
                 onChange={setRandomMembers}
               />
 
+              {/* Ông trời kêu vậy */}
+              <ToggleRow
+                label="Ông trời kêu vậy"
+                hint="Roll random in-game events after each round."
+                value={enableEvents}
+                onChange={setEnableEvents}
+              />
+              <div className={enableEvents ? "" : "opacity-50 pointer-events-none"}>
+                <label className="font-display text-xs uppercase tracking-[0.25em] text-muted-foreground">
+                  Số sự kiện
+                </label>
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={1}
+                    max={EVENTS.length}
+                    step={1}
+                    className="input-hex w-24"
+                    value={eventCount}
+                    disabled={!enableEvents || inputsLocked}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      if (Number.isNaN(v)) return;
+                      setEventCount(Math.min(EVENTS.length, Math.max(1, Math.floor(v))));
+                    }}
+                  />
+                  <span className="text-xs italic text-muted-foreground">
+                    1–{EVENTS.length}
+                  </span>
+                </div>
+              </div>
+
               {/* Random duration */}
               <div>
                 <label className="font-display text-xs uppercase tracking-[0.25em] text-muted-foreground">
-                  Random duration per lane (seconds)
+                  Lane spin (seconds)
                 </label>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <input
@@ -479,7 +619,7 @@ function HomePage() {
                     Reset
                   </button>
                   <span className="text-xs italic text-muted-foreground">
-                    Default {DEFAULT_LANE_SECONDS}s · range {MIN_LANE_SECONDS}–{MAX_LANE_SECONDS}s
+                    {MIN_LANE_SECONDS}–{MAX_LANE_SECONDS}s
                   </span>
                 </div>
               </div>
@@ -581,11 +721,12 @@ function HomePage() {
 
           {/* RIGHT: rounds */}
           <section ref={resultsRef} className="space-y-8 scroll-mt-8 relative">
-            {celebrate && <CelebrationBurst />}
-            {rounds.length === 0 && <EmptyDraft />}
-            {rounds.map((r, idx) => (
-              <RoundView key={r.id} roundNumber={idx + 1} round={r} />
-            ))}
+            {hydrating && rounds.length > 0 && <ResultsSkeleton />}
+            {!hydrating && rounds.length === 0 && <EmptyDraft />}
+            {!hydrating &&
+              rounds.map((r, idx) => (
+                <RoundView key={r.id} roundNumber={idx + 1} round={r} />
+              ))}
           </section>
         </div>
 
@@ -595,54 +736,82 @@ function HomePage() {
   );
 }
 
-function CelebrationBurst() {
+function EventRollPanel({
+  pool,
+  final,
+  revealedIndex,
+  currentName,
+}: {
+  pool: GameEvent[];
+  final: GameEvent[];
+  revealedIndex: number;
+  currentName: string;
+}) {
+  void pool;
   return (
-    <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
-      <div className="absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2">
-        <div
-          className="h-40 w-40 rounded-full"
-          style={{
-            background:
-              "radial-gradient(circle, var(--gold-bright) 0%, var(--gold) 30%, transparent 70%)",
-            animation: "scale-in 0.4s ease-out, fade-out 1.6s ease-out 0.4s forwards",
-            filter: "blur(8px)",
-          }}
-        />
+    <div className="w-full max-w-2xl mx-auto space-y-4">
+      <div className="hextech-frame px-4 py-6 text-center">
+        <div className="text-[10px] uppercase tracking-[0.4em] text-muted-foreground">
+          Sự kiện {Math.min(revealedIndex + 1, final.length)} / {final.length}
+        </div>
+        <div className="mt-2 font-display text-2xl uppercase tracking-widest text-gold-bright text-glow-gold animate-pulse">
+          {currentName}
+        </div>
       </div>
-      {Array.from({ length: 24 }).map((_, i) => {
-        const angle = (i / 24) * Math.PI * 2;
-        const dist = 200 + Math.random() * 160;
-        const dx = Math.cos(angle) * dist;
-        const dy = Math.sin(angle) * dist;
-        const delay = Math.random() * 0.15;
-        const color = i % 2 === 0 ? "var(--gold-bright)" : "var(--team-alpha)";
-        return (
-          <span
-            key={i}
-            className="absolute left-1/2 top-1/3 block h-2 w-2 rounded-full"
-            style={{
-              background: color,
-              boxShadow: `0 0 12px ${color}`,
-              transform: "translate(-50%, -50%)",
-              animation: `burst-${i} 1.6s ease-out ${delay}s forwards`,
-            }}
-          />
-        );
-      })}
-      <style>{`
-        ${Array.from({ length: 24 })
-          .map((_, i) => {
-            const angle = (i / 24) * Math.PI * 2;
-            const dist = 200 + ((i * 37) % 160);
-            const dx = Math.cos(angle) * dist;
-            const dy = Math.sin(angle) * dist;
-            return `@keyframes burst-${i} {
-              0% { transform: translate(-50%, -50%) scale(0.6); opacity: 1; }
-              100% { transform: translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.2); opacity: 0; }
-            }`;
-          })
-          .join("\n")}
-      `}</style>
+      {revealedIndex > 0 && (
+        <ul className="space-y-2">
+          {final.slice(0, revealedIndex).map((ev) => (
+            <li key={ev.id}>
+              <EventCard event={ev} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function EventCard({ event }: { event: GameEvent }) {
+  return (
+    <div className="hextech-frame flex items-start gap-3 px-3 py-2 animate-fade-in">
+      <div className="shrink-0 border border-gold/50 bg-gold/10 px-2 py-1 font-display text-[10px] uppercase tracking-[0.2em] text-gold-bright">
+        {formatEventTime(event.time)}
+      </div>
+      <div className="min-w-0">
+        <div className="font-display text-sm uppercase tracking-[0.18em] text-gold-bright">
+          {event.name}
+        </div>
+        <div className="mt-0.5 font-serif text-xs text-muted-foreground">
+          {event.content}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SummonerSkeleton({ count }: { count: number }) {
+  return (
+    <>
+      {Array.from({ length: count }).map((_, i) => (
+        <li
+          key={i}
+          className="h-7 w-24 border border-gold/30 bg-gold/5 animate-pulse"
+        />
+      ))}
+    </>
+  );
+}
+
+function ResultsSkeleton() {
+  return (
+    <div className="hextech-frame p-5 animate-pulse">
+      <div className="h-4 w-32 bg-gold/20" />
+      <div className="gold-divider my-4" />
+      <div className="space-y-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-12 w-full bg-gold/10 border border-gold/20" />
+        ))}
+      </div>
     </div>
   );
 }
@@ -790,6 +959,21 @@ function RoundView({
         </div>
       </div>
       <div className="gold-divider my-4" />
+
+      {round.events && round.events.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <div className="font-display text-[10px] uppercase tracking-[0.4em] text-gold">
+            Ông trời kêu vậy
+          </div>
+          <ul className="space-y-2">
+            {round.events.map((ev) => (
+              <li key={ev.id}>
+                <EventCard event={ev} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {visibleLanes.length === 0 ? (
         <div className="py-6 text-center text-xs italic uppercase tracking-[0.3em] text-muted-foreground">
