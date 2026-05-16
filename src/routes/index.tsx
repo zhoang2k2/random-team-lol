@@ -121,6 +121,7 @@ function HomePage() {
   );
   const roundIdRef = useRef(persisted?.roundIdSeed ?? 0);
   const gapTimerRef = useRef<number | null>(null);
+  const eventTimerRef = useRef<number | null>(null);
   const arenaRef = useRef<HTMLDivElement | null>(null);
   const resultsRef = useRef<HTMLDivElement | null>(null);
 
@@ -140,8 +141,16 @@ function HomePage() {
     return () => {
       alive = false;
       if (gapTimerRef.current) window.clearTimeout(gapTimerRef.current);
+      if (eventTimerRef.current) window.clearTimeout(eventTimerRef.current);
     };
   }, []);
+
+  // Brief skeleton when we hydrated from storage so the UI doesn't pop in coldly.
+  useEffect(() => {
+    if (!hydrating) return;
+    const t = window.setTimeout(() => setHydrating(false), 600);
+    return () => window.clearTimeout(t);
+  }, [hydrating]);
 
   // Persist to localStorage whenever durable state changes
   useEffect(() => {
