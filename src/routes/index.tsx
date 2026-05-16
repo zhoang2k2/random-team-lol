@@ -400,22 +400,28 @@ function HomePage() {
         <Header />
 
         {/* Shuffle Arena — TOP of page, only visible while shuffling */}
-        {showArena && (
+        {(showArena || eventRolling) && (
           <section
             ref={arenaRef}
             className="mt-8 hextech-frame border-gold/60 bg-background/80 p-4 sm:p-6 scroll-mt-8 animate-fade-in"
           >
             <h2 className="font-display text-center text-sm uppercase tracking-[0.4em] text-gold">
-              {activeRound && activeLane
+              {eventRolling
+                ? `Round ${rounds.findIndex((r) => r.id === eventRolling.roundId) + 1} · Ông trời kêu vậy`
+                : activeRound && activeLane
                 ? `Round ${rounds.findIndex((r) => r.id === activeRound.id) + 1} · Lane ${activeLaneIdx + 1} / ${activeRound.lanes.length}`
                 : "Shuffle Arena"}
             </h2>
-            <p className="text-center font-serif italic text-xs text-muted-foreground">
-              {activeLane ? "The Hextech engine spins…" : "Preparing next lane…"}
-            </p>
             <div className="gold-divider my-3" />
             <div className="flex min-h-[360px] items-center justify-center">
-              {activeLane && activeRound ? (
+              {eventRolling ? (
+                <EventRollPanel
+                  pool={eventRolling.pool}
+                  final={eventRolling.final}
+                  revealedIndex={eventRolling.revealedIndex}
+                  currentName={eventRolling.currentName}
+                />
+              ) : activeLane && activeRound ? (
                 <div className="w-full max-w-3xl mx-auto">
                   <LaneRow
                     key={`${activeRound.id}-${activeLaneIdx}`}
