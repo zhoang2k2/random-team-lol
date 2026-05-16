@@ -91,6 +91,12 @@ function HomePage() {
   const [laneSeconds, setLaneSeconds] = useState<number>(
     persisted?.laneSeconds ?? DEFAULT_LANE_SECONDS
   );
+  const [enableEvents, setEnableEvents] = useState<boolean>(
+    persisted?.enableEvents ?? false
+  );
+  const [eventCount, setEventCount] = useState<number>(
+    persisted?.eventCount ?? 2
+  );
 
   const [champions, setChampions] = useState<Champion[]>([]);
   const [loadingChamps, setLoadingChamps] = useState(true);
@@ -100,7 +106,16 @@ function HomePage() {
   const [shuffling, setShuffling] = useState(false);
   const [activeRoundId, setActiveRoundId] = useState<number | null>(null);
   const [activeLaneIdx, setActiveLaneIdx] = useState<number>(-1);
-  const [celebrate, setCelebrate] = useState(false);
+  const [eventRolling, setEventRolling] = useState<{
+    roundId: number;
+    pool: GameEvent[];
+    final: GameEvent[];
+    revealedIndex: number; // how many final events are settled
+    currentName: string;   // name flickering during roll
+  } | null>(null);
+  // brief hydration skeleton — only when we actually had persisted data
+  const hadPersisted = persisted != null && ((persisted.members?.length ?? 0) > 0 || (persisted.rounds?.length ?? 0) > 0);
+  const [hydrating, setHydrating] = useState<boolean>(hadPersisted);
   const usedChampionsRef = useRef<Set<string>>(
     new Set(persisted?.usedChampionIds ?? [])
   );
