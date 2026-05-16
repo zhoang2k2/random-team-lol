@@ -484,12 +484,15 @@ function HomePage() {
               </div>
 
               <ul className="mt-4 flex flex-wrap gap-2">
-                {members.length === 0 && (
+                {hydrating && members.length > 0 && (
+                  <SummonerSkeleton count={Math.min(members.length, 5)} />
+                )}
+                {!hydrating && members.length === 0 && (
                   <li className="text-sm italic text-muted-foreground">
                     No summoners yet. Add at least 2 to begin.
                   </li>
                 )}
-                {members.map((m, i) => (
+                {!hydrating && members.map((m, i) => (
                   <li
                     key={m}
                     className="group flex items-center gap-2 border border-gold/50 bg-card/60 px-2 py-1"
@@ -519,7 +522,7 @@ function HomePage() {
               {/* Team size */}
               <div>
                 <label className="font-display text-xs uppercase tracking-[0.25em] text-muted-foreground">
-                  Players per team (max 5)
+                  Players per team
                 </label>
                 <div className="mt-2 grid grid-cols-4 gap-2">
                   {[2, 3, 4, 5].map((n) => (
