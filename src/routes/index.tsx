@@ -974,11 +974,6 @@ function RoundView({
         <h3 className="font-display text-sm uppercase tracking-[0.4em] text-gold">
           Round {roundNumber}
         </h3>
-        <div className="flex items-center gap-6 text-xs uppercase tracking-[0.3em]">
-          <span style={{ color: "var(--team-alpha)" }}>Team Alpha</span>
-          <span className="text-muted-foreground">vs</span>
-          <span style={{ color: "var(--team-beta)" }}>Team Beta</span>
-        </div>
       </div>
       <div className="gold-divider my-4" />
 
@@ -1007,11 +1002,11 @@ function RoundView({
             <thead>
               <tr className="bg-gold/10 text-xs uppercase tracking-[0.25em] text-gold">
                 <th className="border-b border-gold/40 px-3 py-2 text-left">Lane</th>
-                <th className="border-b border-gold/40 px-3 py-2 text-left" style={{ color: "var(--team-alpha)" }}>
-                  Team Alpha
+                <th className="border-b border-gold/40 px-3 py-2 text-left">
+                  <TeamHeading side="alpha" />
                 </th>
-                <th className="border-b border-gold/40 px-3 py-2 text-left" style={{ color: "var(--team-beta)" }}>
-                  Team Beta
+                <th className="border-b border-gold/40 px-3 py-2 text-left">
+                  <TeamHeading side="beta" />
                 </th>
               </tr>
             </thead>
