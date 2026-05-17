@@ -14,13 +14,13 @@ export const Route = createFileRoute("/")({
   component: HomePage,
   head: () => ({
     meta: [
-      { title: "Summoner's Draft — LoL Team Randomizer" },
+      { title: "CLB Nghiện — LoL Team Randomizer" },
       {
         name: "description",
         content:
           "Hextech-style team randomizer for League of Legends: shuffle members into Alpha & Beta, roll roles, lock in champions with CSGO-style spins.",
       },
-      { property: "og:title", content: "Summoner's Draft — LoL Team Randomizer" },
+      { property: "og:title", content: "CLB Nghiện — LoL Team Randomizer" },
       {
         property: "og:description",
         content: "Random teams, lanes & champions for your custom League of Legends matches.",
@@ -796,7 +796,7 @@ function EventRollPanel({
 function EventCard({ event }: { event: GameEvent }) {
   return (
     <div className="hextech-frame flex items-start gap-3 px-3 py-2 animate-fade-in">
-      <div className="shrink-0 border border-gold/50 bg-gold/10 px-2 py-1 font-display text-[10px] uppercase tracking-[0.2em] text-gold-bright">
+      <div className="shrink-0 w-24 text-center border border-gold/50 bg-gold/10 px-2 py-1 font-display text-[10px] uppercase tracking-[0.2em] text-gold-bright">
         {formatEventTime(event.time)}
       </div>
       <div className="min-w-0">
@@ -842,16 +842,47 @@ function Header() {
   return (
     <header className="text-center">
       <p className="font-display text-xs uppercase tracking-[0.5em] text-gold">
-        Hextech Workshop
+        CMVN
       </p>
       <h1 className="mt-2 font-display text-4xl font-bold uppercase tracking-[0.2em] text-gold-bright text-glow-gold md:text-5xl">
-        Summoner's Draft
+        CLB Nghiện
       </h1>
       <div className="gold-divider mx-auto mt-3 max-w-md" />
       <p className="mt-3 font-serif text-sm italic text-muted-foreground">
         Random team builder for League of Legends · Alpha vs Beta
       </p>
     </header>
+  );
+}
+
+function TeamHeading({ side }: { side: "alpha" | "beta" }) {
+  const isAlpha = side === "alpha";
+  const color = isAlpha ? "var(--team-alpha)" : "var(--team-beta)";
+  const label = isAlpha ? "Team Alpha" : "Team Beta";
+  return (
+    <span
+      className="inline-flex items-center gap-2 font-display text-sm font-bold uppercase tracking-[0.3em]"
+      style={{ color, textShadow: `0 0 10px ${color}` }}
+    >
+      {isAlpha ? (
+        // Crossed swords (Alpha → aggression)
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M14.5 17.5 21 21l-1-4-3.5-3.5" />
+          <path d="m3 3 7.5 7.5" />
+          <path d="M9.5 17.5 3 21l1-4 3.5-3.5" />
+          <path d="m21 3-7.5 7.5" />
+        </svg>
+      ) : (
+        // Shield (Beta → defense)
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          <path d="m9 12 2 2 4-4" />
+        </svg>
+      )}
+      <span style={{ fontFamily: "'Cinzel', 'Trajan Pro', serif", letterSpacing: "0.25em" }}>
+        {label}
+      </span>
+    </span>
   );
 }
 
@@ -974,11 +1005,6 @@ function RoundView({
         <h3 className="font-display text-sm uppercase tracking-[0.4em] text-gold">
           Round {roundNumber}
         </h3>
-        <div className="flex items-center gap-6 text-xs uppercase tracking-[0.3em]">
-          <span style={{ color: "var(--team-alpha)" }}>Team Alpha</span>
-          <span className="text-muted-foreground">vs</span>
-          <span style={{ color: "var(--team-beta)" }}>Team Beta</span>
-        </div>
       </div>
       <div className="gold-divider my-4" />
 
@@ -1007,11 +1033,11 @@ function RoundView({
             <thead>
               <tr className="bg-gold/10 text-xs uppercase tracking-[0.25em] text-gold">
                 <th className="border-b border-gold/40 px-3 py-2 text-left">Lane</th>
-                <th className="border-b border-gold/40 px-3 py-2 text-left" style={{ color: "var(--team-alpha)" }}>
-                  Team Alpha
+                <th className="border-b border-gold/40 px-3 py-2 text-left">
+                  <TeamHeading side="alpha" />
                 </th>
-                <th className="border-b border-gold/40 px-3 py-2 text-left" style={{ color: "var(--team-beta)" }}>
-                  Team Beta
+                <th className="border-b border-gold/40 px-3 py-2 text-left">
+                  <TeamHeading side="beta" />
                 </th>
               </tr>
             </thead>

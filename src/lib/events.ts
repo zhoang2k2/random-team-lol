@@ -11,7 +11,7 @@ export type GameEvent = {
 export const EVENTS: GameEvent[] = [
   {
     id: "naked-3min",
-    name: "Khoả thân 3 phút",
+    name: "Khoả thân trong vòng 3 phút",
     time: 0,
     content: "Vào trận không được mua đồ cho đến phút thứ 3.",
   },
@@ -35,19 +35,19 @@ export const EVENTS: GameEvent[] = [
   },
   {
     id: "only-q",
-    name: "Only Q 3 phút",
+    name: "Only Q trong vòng 3 phút",
     time: 5,
     content: "Trong 3 phút chỉ được dùng kỹ năng Q.",
   },
   {
     id: "only-w",
-    name: "Only W 3 phút",
+    name: "Only W trong vòng 3 phút",
     time: 5,
     content: "Trong 3 phút chỉ được dùng kỹ năng W.",
   },
   {
     id: "only-e",
-    name: "Only E 3 phút",
+    name: "Only E trong vòng 3 phút",
     time: 5,
     content: "Trong 3 phút chỉ được dùng kỹ năng E.",
   },
@@ -123,7 +123,7 @@ export function pickEvents(n: number): GameEvent[] {
 }
 
 export function formatEventTime(time: number | null): string {
-  if (time === null) return "Do it";
+  if (time === null) return "SPECIAL";
   const mm = String(time).padStart(2, "0");
   return `Phút ${mm}:00`;
 }
