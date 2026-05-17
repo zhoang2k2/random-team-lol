@@ -855,6 +855,37 @@ function Header() {
   );
 }
 
+function TeamHeading({ side }: { side: "alpha" | "beta" }) {
+  const isAlpha = side === "alpha";
+  const color = isAlpha ? "var(--team-alpha)" : "var(--team-beta)";
+  const label = isAlpha ? "Team Alpha" : "Team Beta";
+  return (
+    <span
+      className="inline-flex items-center gap-2 font-display text-sm font-bold uppercase tracking-[0.3em]"
+      style={{ color, textShadow: `0 0 10px ${color}` }}
+    >
+      {isAlpha ? (
+        // Crossed swords (Alpha → aggression)
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M14.5 17.5 21 21l-1-4-3.5-3.5" />
+          <path d="m3 3 7.5 7.5" />
+          <path d="M9.5 17.5 3 21l1-4 3.5-3.5" />
+          <path d="m21 3-7.5 7.5" />
+        </svg>
+      ) : (
+        // Shield (Beta → defense)
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          <path d="m9 12 2 2 4-4" />
+        </svg>
+      )}
+      <span style={{ fontFamily: "'Cinzel', 'Trajan Pro', serif", letterSpacing: "0.25em" }}>
+        {label}
+      </span>
+    </span>
+  );
+}
+
 function Footer() {
   return (
     <footer className="mt-16 text-center text-xs text-muted-foreground">
