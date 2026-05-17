@@ -78,33 +78,23 @@ function loadPersisted(): Partial<PersistedState> | null {
 }
 
 function HomePage() {
-  const persisted = useMemo(() => loadPersisted(), []);
-
-  const [members, setMembers] = useState<string[]>(persisted?.members ?? []);
+  const [members, setMembers] = useState<string[]>([]);
   const [memberInput, setMemberInput] = useState("");
-  const [teamSize, setTeamSize] = useState(persisted?.teamSize ?? 5);
-  const [randomRole, setRandomRole] = useState(persisted?.randomRole ?? false);
-  const [randomMembers, setRandomMembers] = useState(persisted?.randomMembers ?? false);
-  const [exclusions, setExclusions] = useState<ExclusionPair[]>(persisted?.exclusions ?? []);
+  const [teamSize, setTeamSize] = useState(5);
+  const [randomRole, setRandomRole] = useState(false);
+  const [randomMembers, setRandomMembers] = useState(false);
+  const [exclusions, setExclusions] = useState<ExclusionPair[]>([]);
   const [exclA, setExclA] = useState("");
   const [exclB, setExclB] = useState("");
-  const [laneSeconds, setLaneSeconds] = useState<number>(
-    persisted?.laneSeconds ?? DEFAULT_LANE_SECONDS
-  );
-  const [enableEvents, setEnableEvents] = useState<boolean>(
-    persisted?.enableEvents ?? false
-  );
-  const [eventCount, setEventCount] = useState<number>(
-    persisted?.eventCount ?? 1
-  );
+  const [laneSeconds, setLaneSeconds] = useState<number>(DEFAULT_LANE_SECONDS);
+  const [enableEvents, setEnableEvents] = useState<boolean>(false);
+  const [eventCount, setEventCount] = useState<number>(1);
 
   const [champions, setChampions] = useState<Champion[]>([]);
   const [loadingChamps, setLoadingChamps] = useState(true);
   const [champsError, setChampsError] = useState<string | null>(null);
 
-  const [rounds, setRounds] = useState<Round[]>(
-    (persisted?.rounds ?? []).map((r) => ({ ...r, events: r.events ?? [] }))
-  );
+  const [rounds, setRounds] = useState<Round[]>([]);
   const [shuffling, setShuffling] = useState(false);
   const [activeRoundId, setActiveRoundId] = useState<number | null>(null);
   const [activeLaneIdx, setActiveLaneIdx] = useState<number>(-1);
@@ -112,20 +102,38 @@ function HomePage() {
     roundId: number;
     pool: GameEvent[];
     final: GameEvent[];
-    revealedIndex: number; // how many final events are settled
-    currentName: string;   // name flickering during roll
+    revealedIndex: number;
+    currentName: string;
   } | null>(null);
-  // brief hydration skeleton — only when we actually had persisted data
-  const hadPersisted = persisted != null && ((persisted.members?.length ?? 0) > 0 || (persisted.rounds?.length ?? 0) > 0);
-  const [hydrating, setHydrating] = useState<boolean>(hadPersisted);
-  const usedChampionsRef = useRef<Set<string>>(
-    new Set(persisted?.usedChampionIds ?? [])
-  );
-  const roundIdRef = useRef(persisted?.roundIdSeed ?? 0);
+  const [hydrating, setHydrating] = useState<boolean>(false);
+  const [hydrated, setHydrated] = useState<boolean>(false);
+  const usedChampionsRef = useRef<Set<string>>(new Set());
+  const roundIdRef = useRef(0);
   const gapTimerRef = useRef<number | null>(null);
   const eventTimerRef = useRef<number | null>(null);
   const arenaRef = useRef<HTMLDivElement | null>(null);
   const resultsRef = useRef<HTMLDivElement | null>(null);
+
+  // Load persisted state after mount to avoid SSR hydration mismatch.
+  useEffect(() => {
+    const persisted = loadPersisted();
+    if (persisted) {
+      if (persisted.members) setMembers(persisted.members);
+      if (typeof persisted.teamSize === "number") setTeamSize(persisted.teamSize);
+      if (typeof persisted.randomRole === "boolean") setRandomRole(persisted.randomRole);
+      if (typeof persisted.randomMembers === "boolean") setRandomMembers(persisted.randomMembers);
+      if (persisted.exclusions) setExclusions(persisted.exclusions);
+      if (typeof persisted.laneSeconds === "number") setLaneSeconds(persisted.laneSeconds);
+      if (typeof persisted.enableEvents === "boolean") setEnableEvents(persisted.enableEvents);
+      if (typeof persisted.eventCount === "number") setEventCount(Math.min(3, Math.max(1, persisted.eventCount)));
+      if (persisted.rounds) setRounds(persisted.rounds.map((r) => ({ ...r, events: r.events ?? [] })));
+      if (persisted.usedChampionIds) usedChampionsRef.current = new Set(persisted.usedChampionIds);
+      if (typeof persisted.roundIdSeed === "number") roundIdRef.current = persisted.roundIdSeed;
+      const hadData = (persisted.members?.length ?? 0) > 0 || (persisted.rounds?.length ?? 0) > 0;
+      if (hadData) setHydrating(true);
+    }
+    setHydrated(true);
+  }, []);
 
   useEffect(() => {
     let alive = true;
