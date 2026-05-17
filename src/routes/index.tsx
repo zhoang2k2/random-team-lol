@@ -215,6 +215,15 @@ function HomePage() {
   const canShuffle = members.length >= 2 && champions.length > 0 && !shuffling;
   const inputsLocked = shuffling;
 
+  // Minimum team size = floor(n/2) so both teams can field full lanes
+  // (odd 7th sits as solo on Alpha). Capped to 5 (max 5v5).
+  const minTeamSize = Math.max(1, Math.min(5, Math.floor(members.length / 2)));
+
+  // Auto-bump teamSize if below the minimum required for current roster.
+  useEffect(() => {
+    if (teamSize < minTeamSize) setTeamSize(minTeamSize);
+  }, [minTeamSize, teamSize]);
+
   const totalLanes = useMemo(
     () => Math.min(teamSize, Math.ceil(members.length / 2)),
     [teamSize, members.length]
