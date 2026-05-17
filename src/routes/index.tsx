@@ -184,7 +184,7 @@ function HomePage() {
     } catch {
       // ignore quota errors
     }
-  }, [members, teamSize, randomRole, randomMembers, exclusions, laneSeconds, rounds, enableEvents, eventCount]);
+  }, [hydrated, members, teamSize, randomRole, randomMembers, exclusions, laneSeconds, rounds, enableEvents, eventCount]);
 
   const addMember = () => {
     const v = memberInput.trim();
