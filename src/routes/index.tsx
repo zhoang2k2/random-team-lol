@@ -796,7 +796,7 @@ function EventRollPanel({
 function EventCard({ event }: { event: GameEvent }) {
   return (
     <div className="hextech-frame flex items-start gap-3 px-3 py-2 animate-fade-in">
-      <div className="shrink-0 border border-gold/50 bg-gold/10 px-2 py-1 font-display text-[10px] uppercase tracking-[0.2em] text-gold-bright">
+      <div className="shrink-0 w-24 text-center border border-gold/50 bg-gold/10 px-2 py-1 font-display text-[10px] uppercase tracking-[0.2em] text-gold-bright">
         {formatEventTime(event.time)}
       </div>
       <div className="min-w-0">
@@ -842,10 +842,10 @@ function Header() {
   return (
     <header className="text-center">
       <p className="font-display text-xs uppercase tracking-[0.5em] text-gold">
-        Hextech Workshop
+        CMVN
       </p>
       <h1 className="mt-2 font-display text-4xl font-bold uppercase tracking-[0.2em] text-gold-bright text-glow-gold md:text-5xl">
-        Summoner's Draft
+        CLB Nghiện
       </h1>
       <div className="gold-divider mx-auto mt-3 max-w-md" />
       <p className="mt-3 font-serif text-sm italic text-muted-foreground">
