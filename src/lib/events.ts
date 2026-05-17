@@ -123,7 +123,7 @@ export function pickEvents(n: number): GameEvent[] {
 }
 
 export function formatEventTime(time: number | null): string {
-  if (time === null) return "Khi điều kiện kích hoạt";
+  if (time === null) return "Do it";
   const mm = String(time).padStart(2, "0");
   return `Phút ${mm}:00`;
 }
