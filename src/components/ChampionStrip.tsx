@@ -90,7 +90,7 @@ export function ChampionStrip({ pool, finalChampion, durationMs, onDone }: Props
       </div>
 
       <div
-        className="absolute top-1/2 -translate-y-1/2 flex"
+        className="absolute top-1/2 flex"
         style={{
           gap: ITEM_GAP,
           transform: `translate(-${translateX}px, -50%)`,
