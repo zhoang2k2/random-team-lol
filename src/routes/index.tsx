@@ -165,6 +165,7 @@ function HomePage() {
   // Persist to localStorage whenever durable state changes
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (!hydrated) return;
     const state: PersistedState = {
       members,
       teamSize,
