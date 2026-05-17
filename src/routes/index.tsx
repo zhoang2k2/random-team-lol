@@ -536,19 +536,23 @@ function HomePage() {
                   Players per team
                 </label>
                 <div className="mt-2 grid grid-cols-4 gap-2">
-                  {[2, 3, 4, 5].map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => setTeamSize(n)}
-                      disabled={inputsLocked}
-                      className={`btn-hex ${
-                        teamSize === n ? "btn-hex-primary" : ""
-                      }`}
-                    >
-                      {n}v{n}
-                    </button>
-                  ))}
+                  {[2, 3, 4, 5].map((n) => {
+                    const tooSmall = n < minTeamSize;
+                    return (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setTeamSize(n)}
+                        disabled={inputsLocked || tooSmall}
+                        title={tooSmall ? `Need at least ${minTeamSize}v${minTeamSize} for ${members.length} players` : undefined}
+                        className={`btn-hex ${
+                          teamSize === n ? "btn-hex-primary" : ""
+                        } ${tooSmall ? "opacity-40 cursor-not-allowed" : ""}`}
+                      >
+                        {n}v{n}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
