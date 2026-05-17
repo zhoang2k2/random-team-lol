@@ -14,13 +14,13 @@ export const Route = createFileRoute("/")({
   component: HomePage,
   head: () => ({
     meta: [
-      { title: "Summoner's Draft — LoL Team Randomizer" },
+      { title: "CLB Nghiện — LoL Team Randomizer" },
       {
         name: "description",
         content:
           "Hextech-style team randomizer for League of Legends: shuffle members into Alpha & Beta, roll roles, lock in champions with CSGO-style spins.",
       },
-      { property: "og:title", content: "Summoner's Draft — LoL Team Randomizer" },
+      { property: "og:title", content: "CLB Nghiện — LoL Team Randomizer" },
       {
         property: "og:description",
         content: "Random teams, lanes & champions for your custom League of Legends matches.",
