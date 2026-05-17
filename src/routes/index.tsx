@@ -95,7 +95,7 @@ function HomePage() {
     persisted?.enableEvents ?? false
   );
   const [eventCount, setEventCount] = useState<number>(
-    persisted?.eventCount ?? 2
+    persisted?.eventCount ?? 1
   );
 
   const [champions, setChampions] = useState<Champion[]>([]);
@@ -571,7 +571,7 @@ function HomePage() {
                   <input
                     type="number"
                     min={1}
-                    max={EVENTS.length}
+                    max={3}
                     step={1}
                     className="input-hex w-24"
                     value={eventCount}
@@ -579,11 +579,11 @@ function HomePage() {
                     onChange={(e) => {
                       const v = Number(e.target.value);
                       if (Number.isNaN(v)) return;
-                      setEventCount(Math.min(EVENTS.length, Math.max(1, Math.floor(v))));
+                      setEventCount(Math.min(3, Math.max(1, Math.floor(v))));
                     }}
                   />
                   <span className="text-xs italic text-muted-foreground">
-                    1–{EVENTS.length}
+                    1–3
                   </span>
                 </div>
               </div>
