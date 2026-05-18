@@ -10,20 +10,89 @@ import { buildLanePairings, type ExclusionPair } from "@/lib/randomize";
 import { LaneRow } from "@/components/LaneRow";
 import { EVENTS, formatEventTime, pickEvents, type GameEvent } from "@/lib/events";
 
+const HOME_TITLE =
+  "Random Team LOL — Chia Team Liên Minh Huyền Thoại Online | Nghiện LOL";
+const HOME_DESC =
+  "Công cụ random team Liên Minh Huyền Thoại miễn phí: chia đội Alpha/Beta, random lane, random tướng cho custom game, ARAM, đấu nội bộ. Nhanh, cân bằng, không cần đăng nhập.";
+const HOME_URL = "https://random-team-lol.lovable.app/";
+const HOME_OG_IMAGE =
+  "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9f46e38b-7f65-4499-90d0-f533ae0b30bd/id-preview-59dea75c--798fb065-8b64-41bc-a26e-91489f067067.lovable.app-1778658824543.png";
+
+const HOME_FAQ = [
+  {
+    q: "Random Team LOL là gì?",
+    a: "Random Team LOL là công cụ web tự động chia người chơi thành hai đội cân bằng, random lane (Top, Jungle, Mid, ADC, Support) và random tướng cho các trận custom, ARAM hoặc đấu nội bộ Liên Minh Huyền Thoại.",
+  },
+  {
+    q: "Tool có miễn phí không?",
+    a: "Có. Hoàn toàn miễn phí, không cần đăng ký tài khoản, không quảng cáo xâm nhập.",
+  },
+  {
+    q: "Có cần đăng nhập tài khoản Riot không?",
+    a: "Không. Tool hoạt động hoàn toàn trên trình duyệt, không kết nối tới tài khoản Riot Games, dữ liệu summoner lưu trên thiết bị của bạn.",
+  },
+  {
+    q: "Có hỗ trợ chế độ ARAM không?",
+    a: "Có. Bạn có thể bỏ chọn random lane để chuyển sang chế độ ARAM — tool sẽ chỉ random tướng và chia team.",
+  },
+  {
+    q: "Tối đa bao nhiêu người chơi?",
+    a: "Tool hỗ trợ tối đa 10 summoner cho một lượt random (đủ cho 5v5 custom game).",
+  },
+];
+
 export const Route = createFileRoute("/")({
   component: HomePage,
   head: () => ({
     meta: [
-      { title: "CLB Nghiện — LoL Team Randomizer" },
+      { title: HOME_TITLE },
+      { name: "description", content: HOME_DESC },
+      { property: "og:title", content: HOME_TITLE },
+      { property: "og:description", content: HOME_DESC },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: HOME_URL },
+      { property: "og:image", content: HOME_OG_IMAGE },
+      { name: "twitter:title", content: HOME_TITLE },
+      { name: "twitter:description", content: HOME_DESC },
+      { name: "twitter:image", content: HOME_OG_IMAGE },
+    ],
+    links: [{ rel: "canonical", href: HOME_URL }],
+    scripts: [
       {
-        name: "description",
-        content:
-          "Hextech-style team randomizer for League of Legends: shuffle members into Alpha & Beta, roll roles, lock in champions with CSGO-style spins.",
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          name: "Random Team LOL",
+          url: HOME_URL,
+          applicationCategory: "GameApplication",
+          operatingSystem: "Any (Web)",
+          browserRequirements: "Requires JavaScript",
+          inLanguage: ["vi-VN", "en"],
+          description: HOME_DESC,
+          offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          featureList: [
+            "Random chia team Alpha/Beta cân bằng",
+            "Random lane (Top, Jungle, Mid, ADC, Support)",
+            "Random tướng từ pool 160+ champion LMHT",
+            "Hỗ trợ ARAM mode",
+            "Loại trừ cặp người chơi (exclusion pairs)",
+            "Sự kiện ngẫu nhiên trong trận (special events)",
+            "Lưu lịch sử shuffle local",
+          ],
+        }),
       },
-      { property: "og:title", content: "CLB Nghiện — LoL Team Randomizer" },
       {
-        property: "og:description",
-        content: "Random teams, lanes & champions for your custom League of Legends matches.",
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: HOME_FAQ.map((f) => ({
+            "@type": "Question",
+            name: f.q,
+            acceptedAnswer: { "@type": "Answer", text: f.a },
+          })),
+        }),
       },
     ],
   }),
