@@ -822,6 +822,8 @@ function HomePage() {
           </section>
         </div>
 
+        <SeoContent />
+        <InternalNav currentPath="/" />
         <Footer />
       </div>
     </div>
