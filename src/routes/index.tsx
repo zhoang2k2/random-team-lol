@@ -9,21 +9,91 @@ import {
 import { buildLanePairings, type ExclusionPair } from "@/lib/randomize";
 import { LaneRow } from "@/components/LaneRow";
 import { EVENTS, formatEventTime, pickEvents, type GameEvent } from "@/lib/events";
+import { InternalNav } from "@/components/InternalNav";
+
+const HOME_TITLE =
+  "Random Team LOL — Chia Team Liên Minh Huyền Thoại Online | Nghiện LOL";
+const HOME_DESC =
+  "Công cụ random team Liên Minh Huyền Thoại miễn phí: chia đội Alpha/Beta, random lane, random tướng cho custom game, ARAM, đấu nội bộ. Nhanh, cân bằng, không cần đăng nhập.";
+const HOME_URL = "https://random-team-lol.lovable.app/";
+const HOME_OG_IMAGE =
+  "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9f46e38b-7f65-4499-90d0-f533ae0b30bd/id-preview-59dea75c--798fb065-8b64-41bc-a26e-91489f067067.lovable.app-1778658824543.png";
+
+const HOME_FAQ = [
+  {
+    q: "Random Team LOL là gì?",
+    a: "Random Team LOL là công cụ web tự động chia người chơi thành hai đội cân bằng, random lane (Top, Jungle, Mid, ADC, Support) và random tướng cho các trận custom, ARAM hoặc đấu nội bộ Liên Minh Huyền Thoại.",
+  },
+  {
+    q: "Tool có miễn phí không?",
+    a: "Có. Hoàn toàn miễn phí, không cần đăng ký tài khoản, không quảng cáo xâm nhập.",
+  },
+  {
+    q: "Có cần đăng nhập tài khoản Riot không?",
+    a: "Không. Tool hoạt động hoàn toàn trên trình duyệt, không kết nối tới tài khoản Riot Games, dữ liệu summoner lưu trên thiết bị của bạn.",
+  },
+  {
+    q: "Có hỗ trợ chế độ ARAM không?",
+    a: "Có. Bạn có thể bỏ chọn random lane để chuyển sang chế độ ARAM — tool sẽ chỉ random tướng và chia team.",
+  },
+  {
+    q: "Tối đa bao nhiêu người chơi?",
+    a: "Tool hỗ trợ tối đa 10 summoner cho một lượt random (đủ cho 5v5 custom game).",
+  },
+];
 
 export const Route = createFileRoute("/")({
   component: HomePage,
   head: () => ({
     meta: [
-      { title: "CLB Nghiện — LoL Team Randomizer" },
+      { title: HOME_TITLE },
+      { name: "description", content: HOME_DESC },
+      { property: "og:title", content: HOME_TITLE },
+      { property: "og:description", content: HOME_DESC },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: HOME_URL },
+      { property: "og:image", content: HOME_OG_IMAGE },
+      { name: "twitter:title", content: HOME_TITLE },
+      { name: "twitter:description", content: HOME_DESC },
+      { name: "twitter:image", content: HOME_OG_IMAGE },
+    ],
+    links: [{ rel: "canonical", href: HOME_URL }],
+    scripts: [
       {
-        name: "description",
-        content:
-          "Hextech-style team randomizer for League of Legends: shuffle members into Alpha & Beta, roll roles, lock in champions with CSGO-style spins.",
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          name: "Random Team LOL",
+          url: HOME_URL,
+          applicationCategory: "GameApplication",
+          operatingSystem: "Any (Web)",
+          browserRequirements: "Requires JavaScript",
+          inLanguage: ["vi-VN", "en"],
+          description: HOME_DESC,
+          offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          featureList: [
+            "Random chia team Alpha/Beta cân bằng",
+            "Random lane (Top, Jungle, Mid, ADC, Support)",
+            "Random tướng từ pool 160+ champion LMHT",
+            "Hỗ trợ ARAM mode",
+            "Loại trừ cặp người chơi (exclusion pairs)",
+            "Sự kiện ngẫu nhiên trong trận (special events)",
+            "Lưu lịch sử shuffle local",
+          ],
+        }),
       },
-      { property: "og:title", content: "CLB Nghiện — LoL Team Randomizer" },
       {
-        property: "og:description",
-        content: "Random teams, lanes & champions for your custom League of Legends matches.",
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: HOME_FAQ.map((f) => ({
+            "@type": "Question",
+            name: f.q,
+            acceptedAnswer: { "@type": "Answer", text: f.a },
+          })),
+        }),
       },
     ],
   }),
@@ -752,6 +822,8 @@ function HomePage() {
           </section>
         </div>
 
+        <SeoContent />
+        <InternalNav currentPath="/" />
         <Footer />
       </div>
     </div>
@@ -883,6 +955,91 @@ function TeamHeading({ side }: { side: "alpha" | "beta" }) {
         {label}
       </span>
     </span>
+  );
+}
+
+function SeoContent() {
+  return (
+    <section className="mx-auto mt-20 max-w-3xl space-y-8 px-2 text-sm leading-relaxed text-muted-foreground">
+      <header>
+        <h1 className="font-display text-3xl uppercase tracking-[0.2em] text-gold-bright sm:text-4xl">
+          Random Team LOL — Chia Team Liên Minh Huyền Thoại Online
+        </h1>
+        <div className="gold-divider my-4 w-32" />
+        <p>
+          <strong className="text-foreground">Random Team LOL</strong> là công cụ miễn phí giúp
+          bạn chia team Liên Minh Huyền Thoại cho các trận custom game, ARAM hoặc đấu nội bộ
+          giữa bạn bè. Chỉ cần nhập tên các summoner, tool sẽ tự động random thành hai đội
+          Alpha và Beta, gán lane (Top, Jungle, Mid, ADC, Support) và tướng ngẫu nhiên từ pool
+          160+ champion của Liên Minh Huyền Thoại.
+        </p>
+      </header>
+
+      <div>
+        <h2 className="font-display text-xl uppercase tracking-[0.18em] text-gold-bright">
+          Tính năng chính
+        </h2>
+        <ul className="mt-3 list-disc space-y-1 pl-6">
+          <li>
+            <strong>Random chia team cân bằng</strong> — hỗ trợ 2v2, 3v3, 4v4, 5v5.
+          </li>
+          <li>
+            <strong>Random lane LOL</strong> — gán vị trí ngẫu nhiên cho từng người.
+          </li>
+          <li>
+            <strong>Random tướng (champion)</strong> — chọn champion ngẫu nhiên từ data chính
+            thức Riot Data Dragon.
+          </li>
+          <li>
+            <strong>ARAM mode</strong> — bỏ random lane để random tướng kiểu Howling Abyss.
+          </li>
+          <li>
+            <strong>Exclusion pairs</strong> — tránh ghép hai người không hợp vào cùng team.
+          </li>
+          <li>
+            <strong>Special events</strong> — sự kiện ngẫu nhiên trong trận (ARAM mode, Only Q,
+            Khoả thân, Tử chiến Baron...) để tăng độ vui.
+          </li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 className="font-display text-xl uppercase tracking-[0.18em] text-gold-bright">
+          Dùng khi nào?
+        </h2>
+        <h3 className="mt-3 font-semibold text-foreground">Custom game LMHT với bạn bè</h3>
+        <p>
+          Khi tổ chức custom 5v5, 4v4 hoặc 3v3 mà không biết chia team sao cho công bằng,
+          Random Team LOL giúp loại bỏ tranh cãi — máy random, không ai cãi được.
+        </p>
+        <h3 className="mt-3 font-semibold text-foreground">Đấu nội bộ ARAM</h3>
+        <p>
+          Bật ARAM mode để tool random tướng ngẫu nhiên cho mọi người chơi — đúng tinh thần
+          Howling Abyss.
+        </p>
+        <h3 className="mt-3 font-semibold text-foreground">
+          Giải đấu nội bộ công ty (CMVN, CMDN, Classmethod)
+        </h3>
+        <p>
+          Dùng cho các sự kiện gaming nội bộ, team building, giải đấu công ty — fair play,
+          minh bạch.
+        </p>
+      </div>
+
+      <div>
+        <h2 className="font-display text-xl uppercase tracking-[0.18em] text-gold-bright">
+          Câu hỏi thường gặp
+        </h2>
+        <dl className="mt-3 space-y-4">
+          {HOME_FAQ.map((f) => (
+            <div key={f.q}>
+              <dt className="font-semibold text-foreground">{f.q}</dt>
+              <dd className="mt-1">{f.a}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </section>
   );
 }
 
