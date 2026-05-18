@@ -9,6 +9,7 @@ import {
 import { buildLanePairings, type ExclusionPair } from "@/lib/randomize";
 import { LaneRow } from "@/components/LaneRow";
 import { EVENTS, formatEventTime, pickEvents, type GameEvent } from "@/lib/events";
+import { InternalNav } from "@/components/InternalNav";
 
 const HOME_TITLE =
   "Random Team LOL — Chia Team Liên Minh Huyền Thoại Online | Nghiện LOL";
