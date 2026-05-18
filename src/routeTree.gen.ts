@@ -10,11 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as RandomLaneRouteImport } from './routes/random-lane'
+import { Route as HuongDanRouteImport } from './routes/huong-dan'
+import { Route as FaqRouteImport } from './routes/faq'
+import { Route as CustomGameRandomRouteImport } from './routes/custom-game-random'
+import { Route as CmvnRouteImport } from './routes/cmvn'
+import { Route as ChiaTeamLienMinhRouteImport } from './routes/chia-team-lien-minh'
+import { Route as AramRandomRouteImport } from './routes/aram-random'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RandomLaneRoute = RandomLaneRouteImport.update({
+  id: '/random-lane',
+  path: '/random-lane',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HuongDanRoute = HuongDanRouteImport.update({
+  id: '/huong-dan',
+  path: '/huong-dan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomGameRandomRoute = CustomGameRandomRouteImport.update({
+  id: '/custom-game-random',
+  path: '/custom-game-random',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CmvnRoute = CmvnRouteImport.update({
+  id: '/cmvn',
+  path: '/cmvn',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChiaTeamLienMinhRoute = ChiaTeamLienMinhRouteImport.update({
+  id: '/chia-team-lien-minh',
+  path: '/chia-team-lien-minh',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AramRandomRoute = AramRandomRouteImport.update({
+  id: '/aram-random',
+  path: '/aram-random',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -25,27 +67,83 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/aram-random': typeof AramRandomRoute
+  '/chia-team-lien-minh': typeof ChiaTeamLienMinhRoute
+  '/cmvn': typeof CmvnRoute
+  '/custom-game-random': typeof CustomGameRandomRoute
+  '/faq': typeof FaqRoute
+  '/huong-dan': typeof HuongDanRoute
+  '/random-lane': typeof RandomLaneRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/aram-random': typeof AramRandomRoute
+  '/chia-team-lien-minh': typeof ChiaTeamLienMinhRoute
+  '/cmvn': typeof CmvnRoute
+  '/custom-game-random': typeof CustomGameRandomRoute
+  '/faq': typeof FaqRoute
+  '/huong-dan': typeof HuongDanRoute
+  '/random-lane': typeof RandomLaneRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/aram-random': typeof AramRandomRoute
+  '/chia-team-lien-minh': typeof ChiaTeamLienMinhRoute
+  '/cmvn': typeof CmvnRoute
+  '/custom-game-random': typeof CustomGameRandomRoute
+  '/faq': typeof FaqRoute
+  '/huong-dan': typeof HuongDanRoute
+  '/random-lane': typeof RandomLaneRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/sitemap.xml'
+  fullPaths:
+    | '/'
+    | '/aram-random'
+    | '/chia-team-lien-minh'
+    | '/cmvn'
+    | '/custom-game-random'
+    | '/faq'
+    | '/huong-dan'
+    | '/random-lane'
+    | '/sitemap.xml'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/sitemap.xml'
-  id: '__root__' | '/' | '/sitemap.xml'
+  to:
+    | '/'
+    | '/aram-random'
+    | '/chia-team-lien-minh'
+    | '/cmvn'
+    | '/custom-game-random'
+    | '/faq'
+    | '/huong-dan'
+    | '/random-lane'
+    | '/sitemap.xml'
+  id:
+    | '__root__'
+    | '/'
+    | '/aram-random'
+    | '/chia-team-lien-minh'
+    | '/cmvn'
+    | '/custom-game-random'
+    | '/faq'
+    | '/huong-dan'
+    | '/random-lane'
+    | '/sitemap.xml'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AramRandomRoute: typeof AramRandomRoute
+  ChiaTeamLienMinhRoute: typeof ChiaTeamLienMinhRoute
+  CmvnRoute: typeof CmvnRoute
+  CustomGameRandomRoute: typeof CustomGameRandomRoute
+  FaqRoute: typeof FaqRoute
+  HuongDanRoute: typeof HuongDanRoute
+  RandomLaneRoute: typeof RandomLaneRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
@@ -56,6 +154,55 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/random-lane': {
+      id: '/random-lane'
+      path: '/random-lane'
+      fullPath: '/random-lane'
+      preLoaderRoute: typeof RandomLaneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/huong-dan': {
+      id: '/huong-dan'
+      path: '/huong-dan'
+      fullPath: '/huong-dan'
+      preLoaderRoute: typeof HuongDanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/custom-game-random': {
+      id: '/custom-game-random'
+      path: '/custom-game-random'
+      fullPath: '/custom-game-random'
+      preLoaderRoute: typeof CustomGameRandomRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cmvn': {
+      id: '/cmvn'
+      path: '/cmvn'
+      fullPath: '/cmvn'
+      preLoaderRoute: typeof CmvnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chia-team-lien-minh': {
+      id: '/chia-team-lien-minh'
+      path: '/chia-team-lien-minh'
+      fullPath: '/chia-team-lien-minh'
+      preLoaderRoute: typeof ChiaTeamLienMinhRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/aram-random': {
+      id: '/aram-random'
+      path: '/aram-random'
+      fullPath: '/aram-random'
+      preLoaderRoute: typeof AramRandomRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -70,6 +217,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AramRandomRoute: AramRandomRoute,
+  ChiaTeamLienMinhRoute: ChiaTeamLienMinhRoute,
+  CmvnRoute: CmvnRoute,
+  CustomGameRandomRoute: CustomGameRandomRoute,
+  FaqRoute: FaqRoute,
+  HuongDanRoute: HuongDanRoute,
+  RandomLaneRoute: RandomLaneRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport

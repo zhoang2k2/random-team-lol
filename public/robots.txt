@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://random-team-lol.lovable.app/sitemap.xml
