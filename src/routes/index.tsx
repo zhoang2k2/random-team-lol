@@ -958,6 +958,91 @@ function TeamHeading({ side }: { side: "alpha" | "beta" }) {
   );
 }
 
+function SeoContent() {
+  return (
+    <section className="mx-auto mt-20 max-w-3xl space-y-8 px-2 text-sm leading-relaxed text-muted-foreground">
+      <header>
+        <h1 className="font-display text-3xl uppercase tracking-[0.2em] text-gold-bright sm:text-4xl">
+          Random Team LOL — Chia Team Liên Minh Huyền Thoại Online
+        </h1>
+        <div className="gold-divider my-4 w-32" />
+        <p>
+          <strong className="text-foreground">Random Team LOL</strong> là công cụ miễn phí giúp
+          bạn chia team Liên Minh Huyền Thoại cho các trận custom game, ARAM hoặc đấu nội bộ
+          giữa bạn bè. Chỉ cần nhập tên các summoner, tool sẽ tự động random thành hai đội
+          Alpha và Beta, gán lane (Top, Jungle, Mid, ADC, Support) và tướng ngẫu nhiên từ pool
+          160+ champion của Liên Minh Huyền Thoại.
+        </p>
+      </header>
+
+      <div>
+        <h2 className="font-display text-xl uppercase tracking-[0.18em] text-gold-bright">
+          Tính năng chính
+        </h2>
+        <ul className="mt-3 list-disc space-y-1 pl-6">
+          <li>
+            <strong>Random chia team cân bằng</strong> — hỗ trợ 2v2, 3v3, 4v4, 5v5.
+          </li>
+          <li>
+            <strong>Random lane LOL</strong> — gán vị trí ngẫu nhiên cho từng người.
+          </li>
+          <li>
+            <strong>Random tướng (champion)</strong> — chọn champion ngẫu nhiên từ data chính
+            thức Riot Data Dragon.
+          </li>
+          <li>
+            <strong>ARAM mode</strong> — bỏ random lane để random tướng kiểu Howling Abyss.
+          </li>
+          <li>
+            <strong>Exclusion pairs</strong> — tránh ghép hai người không hợp vào cùng team.
+          </li>
+          <li>
+            <strong>Special events</strong> — sự kiện ngẫu nhiên trong trận (ARAM mode, Only Q,
+            Khoả thân, Tử chiến Baron...) để tăng độ vui.
+          </li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 className="font-display text-xl uppercase tracking-[0.18em] text-gold-bright">
+          Dùng khi nào?
+        </h2>
+        <h3 className="mt-3 font-semibold text-foreground">Custom game LMHT với bạn bè</h3>
+        <p>
+          Khi tổ chức custom 5v5, 4v4 hoặc 3v3 mà không biết chia team sao cho công bằng,
+          Random Team LOL giúp loại bỏ tranh cãi — máy random, không ai cãi được.
+        </p>
+        <h3 className="mt-3 font-semibold text-foreground">Đấu nội bộ ARAM</h3>
+        <p>
+          Bật ARAM mode để tool random tướng ngẫu nhiên cho mọi người chơi — đúng tinh thần
+          Howling Abyss.
+        </p>
+        <h3 className="mt-3 font-semibold text-foreground">
+          Giải đấu nội bộ công ty (CMVN, CMDN, Classmethod)
+        </h3>
+        <p>
+          Dùng cho các sự kiện gaming nội bộ, team building, giải đấu công ty — fair play,
+          minh bạch.
+        </p>
+      </div>
+
+      <div>
+        <h2 className="font-display text-xl uppercase tracking-[0.18em] text-gold-bright">
+          Câu hỏi thường gặp
+        </h2>
+        <dl className="mt-3 space-y-4">
+          {HOME_FAQ.map((f) => (
+            <div key={f.q}>
+              <dt className="font-semibold text-foreground">{f.q}</dt>
+              <dd className="mt-1">{f.a}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </section>
+  );
+}
+
 function Footer() {
   return (
     <footer className="mt-16 text-center text-xs text-muted-foreground">
