@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RandomLaneRouteImport } from './routes/random-lane'
 import { Route as HuongDanRouteImport } from './routes/huong-dan'
+import { Route as GioiThieuRouteImport } from './routes/gioi-thieu'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as CustomGameRandomRouteImport } from './routes/custom-game-random'
 import { Route as CmvnRouteImport } from './routes/cmvn'
@@ -32,6 +33,11 @@ const RandomLaneRoute = RandomLaneRouteImport.update({
 const HuongDanRoute = HuongDanRouteImport.update({
   id: '/huong-dan',
   path: '/huong-dan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GioiThieuRoute = GioiThieuRouteImport.update({
+  id: '/gioi-thieu',
+  path: '/gioi-thieu',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FaqRoute = FaqRouteImport.update({
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/cmvn': typeof CmvnRoute
   '/custom-game-random': typeof CustomGameRandomRoute
   '/faq': typeof FaqRoute
+  '/gioi-thieu': typeof GioiThieuRoute
   '/huong-dan': typeof HuongDanRoute
   '/random-lane': typeof RandomLaneRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/cmvn': typeof CmvnRoute
   '/custom-game-random': typeof CustomGameRandomRoute
   '/faq': typeof FaqRoute
+  '/gioi-thieu': typeof GioiThieuRoute
   '/huong-dan': typeof HuongDanRoute
   '/random-lane': typeof RandomLaneRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/cmvn': typeof CmvnRoute
   '/custom-game-random': typeof CustomGameRandomRoute
   '/faq': typeof FaqRoute
+  '/gioi-thieu': typeof GioiThieuRoute
   '/huong-dan': typeof HuongDanRoute
   '/random-lane': typeof RandomLaneRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/cmvn'
     | '/custom-game-random'
     | '/faq'
+    | '/gioi-thieu'
     | '/huong-dan'
     | '/random-lane'
     | '/sitemap.xml'
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/cmvn'
     | '/custom-game-random'
     | '/faq'
+    | '/gioi-thieu'
     | '/huong-dan'
     | '/random-lane'
     | '/sitemap.xml'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/cmvn'
     | '/custom-game-random'
     | '/faq'
+    | '/gioi-thieu'
     | '/huong-dan'
     | '/random-lane'
     | '/sitemap.xml'
@@ -142,6 +154,7 @@ export interface RootRouteChildren {
   CmvnRoute: typeof CmvnRoute
   CustomGameRandomRoute: typeof CustomGameRandomRoute
   FaqRoute: typeof FaqRoute
+  GioiThieuRoute: typeof GioiThieuRoute
   HuongDanRoute: typeof HuongDanRoute
   RandomLaneRoute: typeof RandomLaneRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -168,6 +181,13 @@ declare module '@tanstack/react-router' {
       path: '/huong-dan'
       fullPath: '/huong-dan'
       preLoaderRoute: typeof HuongDanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gioi-thieu': {
+      id: '/gioi-thieu'
+      path: '/gioi-thieu'
+      fullPath: '/gioi-thieu'
+      preLoaderRoute: typeof GioiThieuRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/faq': {
@@ -222,6 +242,7 @@ const rootRouteChildren: RootRouteChildren = {
   CmvnRoute: CmvnRoute,
   CustomGameRandomRoute: CustomGameRandomRoute,
   FaqRoute: FaqRoute,
+  GioiThieuRoute: GioiThieuRoute,
   HuongDanRoute: HuongDanRoute,
   RandomLaneRoute: RandomLaneRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
@@ -229,3 +250,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

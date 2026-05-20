@@ -78,6 +78,30 @@ export const EVENTS: GameEvent[] = [
     content:
       "Tất cả lên 'Dây chuyền Chuộc tội' làm món đầu tiên. Jungle & Support lên ở món thứ hai.",
   },
+  {
+    id: "poor-is-sin",
+    name: "Nghèo chắc chắn là một cái tội",
+    time: 0,
+    content: "Summoner không có skin bắt buộc AFK trong vòng 2 phút.",
+  },
+  {
+    id: "simplify",
+    name: "Đơn giản hoá",
+    time: 7,
+    content: "Summoner không được sử dụng ultimate skill trong vòng 4 phút.",
+  },
+  {
+    id: "dirty-feet",
+    name: "Chân dơ vãi",
+    time: null,
+    content: "Summoner không được mua bất kì món giày/dép nào trong trận này.",
+  },
+  {
+    id: "long-way-home",
+    name: "Đường về nhà xa quá",
+    time: 7,
+    content: "Summoner truyền tống về bệ đá trong vòng 3 phút, chỉ cho phép hồi sinh hoặc đi bộ về.",
+  },
 ];
 
 function shuffle<T>(arr: T[]): T[] {

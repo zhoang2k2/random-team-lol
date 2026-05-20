@@ -19,28 +19,7 @@ const HOME_URL = "https://random-team-lol.lovable.app/";
 const HOME_OG_IMAGE =
   "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9f46e38b-7f65-4499-90d0-f533ae0b30bd/id-preview-59dea75c--798fb065-8b64-41bc-a26e-91489f067067.lovable.app-1778658824543.png";
 
-const HOME_FAQ = [
-  {
-    q: "Random Team LOL là gì?",
-    a: "Random Team LOL là công cụ web tự động chia người chơi thành hai đội cân bằng, random lane (Top, Jungle, Mid, ADC, Support) và random tướng cho các trận custom, ARAM hoặc đấu nội bộ Liên Minh Huyền Thoại.",
-  },
-  {
-    q: "Tool có miễn phí không?",
-    a: "Có. Hoàn toàn miễn phí, không cần đăng ký tài khoản, không quảng cáo xâm nhập.",
-  },
-  {
-    q: "Có cần đăng nhập tài khoản Riot không?",
-    a: "Không. Tool hoạt động hoàn toàn trên trình duyệt, không kết nối tới tài khoản Riot Games, dữ liệu summoner lưu trên thiết bị của bạn.",
-  },
-  {
-    q: "Có hỗ trợ chế độ ARAM không?",
-    a: "Có. Bạn có thể bỏ chọn random lane để chuyển sang chế độ ARAM — tool sẽ chỉ random tướng và chia team.",
-  },
-  {
-    q: "Tối đa bao nhiêu người chơi?",
-    a: "Tool hỗ trợ tối đa 10 summoner cho một lượt random (đủ cho 5v5 custom game).",
-  },
-];
+
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -81,18 +60,6 @@ export const Route = createFileRoute("/")({
             "Sự kiện ngẫu nhiên trong trận (special events)",
             "Lưu lịch sử shuffle local",
           ],
-        }),
-      },
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: HOME_FAQ.map((f) => ({
-            "@type": "Question",
-            name: f.q,
-            acceptedAnswer: { "@type": "Answer", text: f.a },
-          })),
         }),
       },
     ],
@@ -360,13 +327,18 @@ function HomePage() {
     });
   };
 
-  const startEventRoll = (roundId: number) => {
-    const desired = Math.max(0, Math.min(Math.floor(eventCount) || 0, EVENTS.length));
-    if (!enableEvents || desired === 0) {
+  const startEventRoll = (roundId: number, countOverride?: number) => {
+    const desiredCount = countOverride !== undefined ? countOverride : eventCount;
+    const desired = Math.max(0, Math.min(Math.floor(desiredCount) || 0, EVENTS.length));
+    if ((!enableEvents && countOverride === undefined) || desired === 0) {
       finishRound(roundId);
       return;
     }
     const finals = pickEvents(desired);
+
+    // Clear the events of the round we are re-rolling
+    setRounds((prev) => prev.map((r) => r.id === roundId ? { ...r, events: [] } : r));
+
     setEventRolling({
       roundId,
       pool: EVENTS,
@@ -374,6 +346,20 @@ function HomePage() {
       revealedIndex: 0,
       currentName: EVENTS[0].name,
     });
+    setShuffling(true); // make sure inputs are locked during reshuffle
+    requestAnimationFrame(() => {
+      arenaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  };
+
+  const handleStopShuffle = () => {
+    if (gapTimerRef.current) window.clearTimeout(gapTimerRef.current);
+    if (eventTimerRef.current) window.clearTimeout(eventTimerRef.current);
+    setRounds((prev) => prev.filter((r) => r.id !== activeRoundId && (!eventRolling || r.id !== eventRolling.roundId)));
+    setShuffling(false);
+    setActiveRoundId(null);
+    setActiveLaneIdx(-1);
+    setEventRolling(null);
   };
 
   const finishRound = (_roundId: number) => {
@@ -493,8 +479,15 @@ function HomePage() {
         {(showArena || eventRolling) && (
           <section
             ref={arenaRef}
-            className="mt-8 hextech-frame border-gold/60 bg-background/80 p-4 sm:p-6 scroll-mt-8 animate-fade-in"
+            className="mt-8 hextech-frame border-gold/60 bg-background/80 p-4 sm:p-6 scroll-mt-8 animate-fade-in relative"
           >
+            <button
+              onClick={handleStopShuffle}
+              className="absolute top-2 right-4 text-xs uppercase tracking-[0.2em] text-muted-foreground hover:text-destructive z-10"
+              title="Dừng shuffle ngay lập tức"
+            >
+              Stop
+            </button>
             <h2 className="font-display text-center text-sm uppercase tracking-[0.4em] text-gold">
               {eventRolling
                 ? `Round ${rounds.findIndex((r) => r.id === eventRolling.roundId) + 1} · Ông trời kêu vậy`
@@ -817,12 +810,17 @@ function HomePage() {
             {!hydrating && rounds.length === 0 && <EmptyDraft />}
             {!hydrating &&
               rounds.map((r, idx) => (
-                <RoundView key={r.id} roundNumber={idx + 1} round={r} />
+                <RoundView 
+                  key={r.id} 
+                  roundNumber={idx + 1} 
+                  round={r} 
+                  onReshuffle={startEventRoll} 
+                  disabled={inputsLocked} 
+                />
               ))}
           </section>
         </div>
 
-        <SeoContent />
         <InternalNav currentPath="/" />
         <Footer />
       </div>
@@ -917,11 +915,11 @@ function Header() {
         CMVN
       </p>
       <h1 className="mt-2 font-display text-4xl font-bold uppercase tracking-[0.2em] text-gold-bright text-glow-gold md:text-5xl">
-        CLB Nghiện
+        Xóm Nghẹo
       </h1>
       <div className="gold-divider mx-auto mt-3 max-w-md" />
       <p className="mt-3 font-serif text-sm italic text-muted-foreground">
-        Random team builder for League of Legends · Alpha vs Beta
+        Vĩ nhân nào không có 1 quá khứ, Kẻ nghiện nào chẳng còn 1 tương lai
       </p>
     </header>
   );
@@ -958,90 +956,7 @@ function TeamHeading({ side }: { side: "alpha" | "beta" }) {
   );
 }
 
-function SeoContent() {
-  return (
-    <section className="mx-auto mt-20 max-w-3xl space-y-8 px-2 text-sm leading-relaxed text-muted-foreground">
-      <header>
-        <h1 className="font-display text-3xl uppercase tracking-[0.2em] text-gold-bright sm:text-4xl">
-          Random Team LOL — Chia Team Liên Minh Huyền Thoại Online
-        </h1>
-        <div className="gold-divider my-4 w-32" />
-        <p>
-          <strong className="text-foreground">Random Team LOL</strong> là công cụ miễn phí giúp
-          bạn chia team Liên Minh Huyền Thoại cho các trận custom game, ARAM hoặc đấu nội bộ
-          giữa bạn bè. Chỉ cần nhập tên các summoner, tool sẽ tự động random thành hai đội
-          Alpha và Beta, gán lane (Top, Jungle, Mid, ADC, Support) và tướng ngẫu nhiên từ pool
-          160+ champion của Liên Minh Huyền Thoại.
-        </p>
-      </header>
 
-      <div>
-        <h2 className="font-display text-xl uppercase tracking-[0.18em] text-gold-bright">
-          Tính năng chính
-        </h2>
-        <ul className="mt-3 list-disc space-y-1 pl-6">
-          <li>
-            <strong>Random chia team cân bằng</strong> — hỗ trợ 2v2, 3v3, 4v4, 5v5.
-          </li>
-          <li>
-            <strong>Random lane LOL</strong> — gán vị trí ngẫu nhiên cho từng người.
-          </li>
-          <li>
-            <strong>Random tướng (champion)</strong> — chọn champion ngẫu nhiên từ data chính
-            thức Riot Data Dragon.
-          </li>
-          <li>
-            <strong>ARAM mode</strong> — bỏ random lane để random tướng kiểu Howling Abyss.
-          </li>
-          <li>
-            <strong>Exclusion pairs</strong> — tránh ghép hai người không hợp vào cùng team.
-          </li>
-          <li>
-            <strong>Special events</strong> — sự kiện ngẫu nhiên trong trận (ARAM mode, Only Q,
-            Khoả thân, Tử chiến Baron...) để tăng độ vui.
-          </li>
-        </ul>
-      </div>
-
-      <div>
-        <h2 className="font-display text-xl uppercase tracking-[0.18em] text-gold-bright">
-          Dùng khi nào?
-        </h2>
-        <h3 className="mt-3 font-semibold text-foreground">Custom game LMHT với bạn bè</h3>
-        <p>
-          Khi tổ chức custom 5v5, 4v4 hoặc 3v3 mà không biết chia team sao cho công bằng,
-          Random Team LOL giúp loại bỏ tranh cãi — máy random, không ai cãi được.
-        </p>
-        <h3 className="mt-3 font-semibold text-foreground">Đấu nội bộ ARAM</h3>
-        <p>
-          Bật ARAM mode để tool random tướng ngẫu nhiên cho mọi người chơi — đúng tinh thần
-          Howling Abyss.
-        </p>
-        <h3 className="mt-3 font-semibold text-foreground">
-          Giải đấu nội bộ công ty (CMVN, CMDN, Classmethod)
-        </h3>
-        <p>
-          Dùng cho các sự kiện gaming nội bộ, team building, giải đấu công ty — fair play,
-          minh bạch.
-        </p>
-      </div>
-
-      <div>
-        <h2 className="font-display text-xl uppercase tracking-[0.18em] text-gold-bright">
-          Câu hỏi thường gặp
-        </h2>
-        <dl className="mt-3 space-y-4">
-          {HOME_FAQ.map((f) => (
-            <div key={f.q}>
-              <dt className="font-semibold text-foreground">{f.q}</dt>
-              <dd className="mt-1">{f.a}</dd>
-            </div>
-          ))}
-        </dl>
-      </div>
-    </section>
-  );
-}
 
 function Footer() {
   return (
@@ -1151,11 +1066,23 @@ function SummonerSelect({
 function RoundView({
   roundNumber,
   round,
+  onReshuffle,
+  disabled,
 }: {
   roundNumber: number;
   round: Round;
+  onReshuffle?: (roundId: number, count: number) => void;
+  disabled?: boolean;
 }) {
   const visibleLanes = round.lanes.slice(0, round.revealed);
+  const [localEventCount, setLocalEventCount] = useState(round.events?.length || 1);
+
+  useEffect(() => {
+    if (round.events && round.events.length > 0) {
+      setLocalEventCount(round.events.length);
+    }
+  }, [round.events]);
+
   return (
     <div className="hextech-frame p-5">
       <div className="flex items-center justify-between">
@@ -1167,8 +1094,35 @@ function RoundView({
 
       {round.events && round.events.length > 0 && (
         <div className="mb-4 space-y-2">
-          <div className="font-display text-[10px] uppercase tracking-[0.4em] text-gold">
-            Ông trời kêu vậy
+          <div className="flex items-center gap-4">
+            <div className="font-display text-[10px] uppercase tracking-[0.4em] text-gold">
+              Ông trời kêu vậy
+            </div>
+            {onReshuffle && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={3}
+                  step={1}
+                  className="input-hex w-16 h-9 text-xs px-1 py-0"
+                  value={localEventCount}
+                  disabled={disabled}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    if (!Number.isNaN(v)) setLocalEventCount(Math.max(1, Math.floor(v)));
+                  }}
+                />
+                <button
+                  type="button"
+                  className="btn-hex text-[10px] px-2 py-0.5"
+                  onClick={() => onReshuffle(round.id, localEventCount)}
+                  disabled={disabled}
+                >
+                  Re-shuffle events
+                </button>
+              </div>
+            )}
           </div>
           <ul className="space-y-2">
             {round.events.map((ev) => (

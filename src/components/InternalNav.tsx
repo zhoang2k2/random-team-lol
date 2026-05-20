@@ -18,7 +18,8 @@ export function InternalNav({ currentPath }: { currentPath?: string }) {
   return (
     <nav
       aria-label="Tools liên quan"
-      className="mt-16 rounded-lg border border-gold-bright/20 bg-card/40 p-6"
+      className="mt-16 rounded-lg border border-gold-bright/20 bg-card/40 p-6 hidden"
+      style={{ display: "none" }}
     >
       <h2 className="mb-4 font-display text-xl uppercase tracking-[0.2em] text-gold-bright">
         Tools liên quan
