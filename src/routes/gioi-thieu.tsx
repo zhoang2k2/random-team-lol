@@ -25,9 +25,7 @@ function GioiThieuRoute() {
     <div className="min-h-screen px-4 py-8 md:px-8 lg:px-12">
       <div className="mx-auto max-w-7xl">
         <header className="text-center mb-8">
-          <p className="font-display text-xs uppercase tracking-[0.5em] text-gold">
-            Giới thiệu
-          </p>
+          <p className="font-display text-xs uppercase tracking-[0.5em] text-gold">Giới thiệu</p>
           <h1 className="mt-2 font-display text-4xl font-bold uppercase tracking-[0.2em] text-gold-bright text-glow-gold md:text-5xl">
             Về Random Team LOL
           </h1>
@@ -43,9 +41,9 @@ function GioiThieuRoute() {
             <p>
               <strong className="text-foreground">Random Team LOL</strong> là công cụ miễn phí giúp
               bạn chia team Liên Minh Huyền Thoại cho các trận custom game, ARAM hoặc đấu nội bộ
-              giữa bạn bè. Chỉ cần nhập tên các summoner, tool sẽ tự động random thành hai đội
-              Alpha và Beta, gán lane (Top, Jungle, Mid, ADC, Support) và tướng ngẫu nhiên từ pool
-              160+ champion của Liên Minh Huyền Thoại.
+              giữa bạn bè. Chỉ cần nhập tên các summoner, tool sẽ tự động random thành hai đội Alpha
+              và Beta, gán lane (Top, Jungle, Mid, ADC, Support) và tướng ngẫu nhiên từ pool 160+
+              champion của Liên Minh Huyền Thoại.
             </p>
           </header>
 
@@ -83,8 +81,8 @@ function GioiThieuRoute() {
             </h2>
             <h3 className="mt-3 font-semibold text-foreground">Custom game LMHT với bạn bè</h3>
             <p>
-              Khi tổ chức custom 5v5, 4v4 hoặc 3v3 mà không biết chia team sao cho công bằng,
-              Random Team LOL giúp loại bỏ tranh cãi — máy random, không ai cãi được.
+              Khi tổ chức custom 5v5, 4v4 hoặc 3v3 mà không biết chia team sao cho công bằng, Random
+              Team LOL giúp loại bỏ tranh cãi — máy random, không ai cãi được.
             </p>
             <h3 className="mt-3 font-semibold text-foreground">Đấu nội bộ ARAM</h3>
             <p>
@@ -95,8 +93,8 @@ function GioiThieuRoute() {
               Giải đấu nội bộ công ty (CMVN, CMDN, Classmethod)
             </h3>
             <p>
-              Dùng cho các sự kiện gaming nội bộ, team building, giải đấu công ty — fair play,
-              minh bạch.
+              Dùng cho các sự kiện gaming nội bộ, team building, giải đấu công ty — fair play, minh
+              bạch.
             </p>
           </div>
 
@@ -116,7 +114,7 @@ function GioiThieuRoute() {
         </section>
 
         <InternalNav currentPath="/gioi-thieu" />
-        
+
         <footer className="mt-16 text-center text-xs text-muted-foreground">
           <p>
             Champions, roles & artwork via{" "}

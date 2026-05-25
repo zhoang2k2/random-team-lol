@@ -59,10 +59,7 @@ export function SlotMachine<T>({
   }, [finalItem]);
 
   return (
-    <div
-      className="relative overflow-hidden hextech-frame"
-      style={{ height: itemHeight }}
-    >
+    <div className="relative overflow-hidden hextech-frame" style={{ height: itemHeight }}>
       <div
         className="absolute left-0 right-0"
         style={{
