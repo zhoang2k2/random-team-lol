@@ -37,9 +37,36 @@ export function buildLanePairings(
   const betaSize = trimmed.length - half;
   const lanesNeeded = Math.max(alphaSize, betaSize);
 
-  const rolesPool: Role[] = randomRole
-    ? shuffle(ROLES_ORDER).slice(0, lanesNeeded)
-    : ROLES_ORDER.slice(0, lanesNeeded);
+  // 1. Determine which roles are required by the defaultRoles configuration
+  const requiredRoles = new Set<Role>();
+  for (const r of ROLES_ORDER) {
+    if (defaultRoles?.[r]) {
+      const { p1, p2 } = defaultRoles[r];
+      if ((p1 && trimmed.includes(p1)) || (p2 && trimmed.includes(p2))) {
+        requiredRoles.add(r);
+      }
+    }
+  }
+
+  // 2. Build rolesPool to ensure required roles are included up to lanesNeeded
+  let rolesPool: Role[] = [];
+  const requiredArray = Array.from(requiredRoles);
+
+  if (randomRole) {
+    rolesPool.push(...shuffle(requiredArray).slice(0, lanesNeeded));
+    if (rolesPool.length < lanesNeeded) {
+      const remainingRoles = ROLES_ORDER.filter((r) => !rolesPool.includes(r));
+      rolesPool.push(...shuffle(remainingRoles).slice(0, lanesNeeded - rolesPool.length));
+    }
+    rolesPool = shuffle(rolesPool);
+  } else {
+    rolesPool.push(...requiredArray.slice(0, lanesNeeded));
+    if (rolesPool.length < lanesNeeded) {
+      const remainingRoles = ROLES_ORDER.filter((r) => !rolesPool.includes(r));
+      rolesPool.push(...remainingRoles.slice(0, lanesNeeded - rolesPool.length));
+    }
+    rolesPool.sort((a, b) => ROLES_ORDER.indexOf(a) - ROLES_ORDER.indexOf(b));
+  }
 
   let bestPairings: LanePairing[] | null = null;
 
