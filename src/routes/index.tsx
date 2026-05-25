@@ -908,7 +908,8 @@ function HomePage() {
               {!loadingChamps && !champsError && (
                 <div className="flex flex-col items-center gap-3 pt-2">
                   <p className="text-center text-xs text-muted-foreground">
-                    {champions.length} champions loaded · {totalLanes || 0} lane{totalLanes === 1 ? "" : "s"}
+                    {champions.length} champions loaded · {totalLanes || 0} lane
+                    {totalLanes === 1 ? "" : "s"}
                   </p>
                   <div className="flex gap-2">
                     <button
