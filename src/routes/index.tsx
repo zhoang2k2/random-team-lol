@@ -5,21 +5,19 @@ import {
   pickRandomChampions,
   ROLE_META,
   type Champion,
+  type Role,
 } from "@/lib/lol-api";
 import { buildLanePairings, type ExclusionPair } from "@/lib/randomize";
 import { LaneRow } from "@/components/LaneRow";
 import { EVENTS, formatEventTime, pickEvents, type GameEvent } from "@/lib/events";
 import { InternalNav } from "@/components/InternalNav";
 
-const HOME_TITLE =
-  "Random Team LOL — Chia Team Liên Minh Huyền Thoại Online | Nghiện LOL";
+const HOME_TITLE = "Random Team LOL — Chia Team Liên Minh Huyền Thoại Online | Nghiện LOL";
 const HOME_DESC =
   "Công cụ random team Liên Minh Huyền Thoại miễn phí: chia đội Alpha/Beta, random lane, random tướng cho custom game, ARAM, đấu nội bộ. Nhanh, cân bằng, không cần đăng nhập.";
 const HOME_URL = "https://random-team-lol.lovable.app/";
 const HOME_OG_IMAGE =
   "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9f46e38b-7f65-4499-90d0-f533ae0b30bd/id-preview-59dea75c--798fb065-8b64-41bc-a26e-91489f067067.lovable.app-1778658824543.png";
-
-
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -101,6 +99,7 @@ type PersistedState = {
   roundIdSeed: number;
   enableEvents: boolean;
   eventCount: number;
+  defaultRoles?: Record<Role, { p1: string; p2: string }>;
 };
 
 function loadPersisted(): Partial<PersistedState> | null {
@@ -126,6 +125,13 @@ function HomePage() {
   const [laneSeconds, setLaneSeconds] = useState<number>(DEFAULT_LANE_SECONDS);
   const [enableEvents, setEnableEvents] = useState<boolean>(false);
   const [eventCount, setEventCount] = useState<number>(1);
+  const [defaultRoles, setDefaultRoles] = useState<Record<Role, { p1: string; p2: string }>>({
+    TOP: { p1: "", p2: "" },
+    JUNGLE: { p1: "", p2: "" },
+    MID: { p1: "", p2: "" },
+    ADC: { p1: "", p2: "" },
+    SUPPORT: { p1: "", p2: "" },
+  });
 
   const [champions, setChampions] = useState<Champion[]>([]);
   const [loadingChamps, setLoadingChamps] = useState(true);
@@ -162,8 +168,11 @@ function HomePage() {
       if (persisted.exclusions) setExclusions(persisted.exclusions);
       if (typeof persisted.laneSeconds === "number") setLaneSeconds(persisted.laneSeconds);
       if (typeof persisted.enableEvents === "boolean") setEnableEvents(persisted.enableEvents);
-      if (typeof persisted.eventCount === "number") setEventCount(Math.min(3, Math.max(1, persisted.eventCount)));
-      if (persisted.rounds) setRounds(persisted.rounds.map((r) => ({ ...r, events: r.events ?? [] })));
+      if (typeof persisted.eventCount === "number")
+        setEventCount(Math.min(3, Math.max(1, persisted.eventCount)));
+      if (persisted.defaultRoles) setDefaultRoles(persisted.defaultRoles);
+      if (persisted.rounds)
+        setRounds(persisted.rounds.map((r) => ({ ...r, events: r.events ?? [] })));
       if (persisted.usedChampionIds) usedChampionsRef.current = new Set(persisted.usedChampionIds);
       if (typeof persisted.roundIdSeed === "number") roundIdRef.current = persisted.roundIdSeed;
       const hadData = (persisted.members?.length ?? 0) > 0 || (persisted.rounds?.length ?? 0) > 0;
@@ -215,13 +224,26 @@ function HomePage() {
       roundIdSeed: roundIdRef.current,
       enableEvents,
       eventCount,
+      defaultRoles,
     };
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {
       // ignore quota errors
     }
-  }, [hydrated, members, teamSize, randomRole, randomMembers, exclusions, laneSeconds, rounds, enableEvents, eventCount]);
+  }, [
+    hydrated,
+    members,
+    teamSize,
+    randomRole,
+    randomMembers,
+    exclusions,
+    laneSeconds,
+    rounds,
+    enableEvents,
+    eventCount,
+    defaultRoles,
+  ]);
 
   const addMember = () => {
     const v = memberInput.trim();
@@ -240,17 +262,23 @@ function HomePage() {
 
   const removeMember = (name: string) => {
     setMembers((prev) => prev.filter((m) => m !== name));
-    setExclusions((prev) =>
-      prev.filter((p) => p.a !== name && p.b !== name)
-    );
+    setExclusions((prev) => prev.filter((p) => p.a !== name && p.b !== name));
+    setDefaultRoles((prev) => {
+      const updated = { ...prev };
+      for (const r of Object.keys(updated) as Role[]) {
+        updated[r] = {
+          p1: updated[r].p1 === name ? "" : updated[r].p1,
+          p2: updated[r].p2 === name ? "" : updated[r].p2,
+        };
+      }
+      return updated;
+    });
   };
 
   const addExclusion = () => {
     if (!exclA || !exclB || exclA === exclB) return;
     const exists = exclusions.some(
-      (p) =>
-        (p.a === exclA && p.b === exclB) ||
-        (p.a === exclB && p.b === exclA)
+      (p) => (p.a === exclA && p.b === exclB) || (p.a === exclB && p.b === exclA),
     );
     if (exists) return;
     setExclusions((prev) => [...prev, { a: exclA, b: exclB }]);
@@ -272,7 +300,7 @@ function HomePage() {
 
   const totalLanes = useMemo(
     () => Math.min(teamSize, Math.ceil(members.length / 2)),
-    [teamSize, members.length]
+    [teamSize, members.length],
   );
 
   const handleShuffle = () => {
@@ -280,15 +308,13 @@ function HomePage() {
     const pairings = buildLanePairings(
       members,
       teamSize,
-      randomRole,
+      false, // Force randomRole to false
       randomMembers,
-      exclusions
+      exclusions,
+      defaultRoles,
     );
     // Count actual champion picks needed (skip null sides for odd counts)
-    const totalChamps = pairings.reduce(
-      (n, p) => n + (p.alpha ? 1 : 0) + (p.beta ? 1 : 0),
-      0
-    );
+    const totalChamps = pairings.reduce((n, p) => n + (p.alpha ? 1 : 0) + (p.beta ? 1 : 0), 0);
 
     let used = usedChampionsRef.current;
     const available = champions.length - used.size;
@@ -337,7 +363,7 @@ function HomePage() {
     const finals = pickEvents(desired);
 
     // Clear the events of the round we are re-rolling
-    setRounds((prev) => prev.map((r) => r.id === roundId ? { ...r, events: [] } : r));
+    setRounds((prev) => prev.map((r) => (r.id === roundId ? { ...r, events: [] } : r)));
 
     setEventRolling({
       roundId,
@@ -355,7 +381,11 @@ function HomePage() {
   const handleStopShuffle = () => {
     if (gapTimerRef.current) window.clearTimeout(gapTimerRef.current);
     if (eventTimerRef.current) window.clearTimeout(eventTimerRef.current);
-    setRounds((prev) => prev.filter((r) => r.id !== activeRoundId && (!eventRolling || r.id !== eventRolling.roundId)));
+    setRounds((prev) =>
+      prev.filter(
+        (r) => r.id !== activeRoundId && (!eventRolling || r.id !== eventRolling.roundId),
+      ),
+    );
     setShuffling(false);
     setActiveRoundId(null);
     setActiveLaneIdx(-1);
@@ -377,11 +407,7 @@ function HomePage() {
     if (roundId == null || laneIdx < 0) return;
 
     setActiveLaneIdx(-1);
-    setRounds((prev) =>
-      prev.map((r) =>
-        r.id === roundId ? { ...r, revealed: laneIdx + 1 } : r
-      )
-    );
+    setRounds((prev) => prev.map((r) => (r.id === roundId ? { ...r, revealed: laneIdx + 1 } : r)));
 
     const round = rounds.find((r) => r.id === roundId);
     const totalLaneCount = round?.lanes.length ?? 0;
@@ -406,9 +432,7 @@ function HomePage() {
 
     if (revealedIndex >= final.length) {
       // commit events into the round, then finish
-      setRounds((prev) =>
-        prev.map((r) => (r.id === roundId ? { ...r, events: final } : r))
-      );
+      setRounds((prev) => prev.map((r) => (r.id === roundId ? { ...r, events: final } : r)));
       const t = window.setTimeout(() => finishRound(roundId), 400);
       return () => window.clearTimeout(t);
     }
@@ -419,9 +443,7 @@ function HomePage() {
       flickers -= 1;
       const rnd = pool[Math.floor(Math.random() * pool.length)];
       setEventRolling((prev) =>
-        prev && prev.roundId === roundId
-          ? { ...prev, currentName: rnd.name }
-          : prev
+        prev && prev.roundId === roundId ? { ...prev, currentName: rnd.name } : prev,
       );
       if (flickers <= 0) {
         // settle on the actual final event
@@ -432,7 +454,7 @@ function HomePage() {
                 currentName: final[revealedIndex].name,
                 revealedIndex: revealedIndex + 1,
               }
-            : prev
+            : prev,
         );
         return;
       }
@@ -445,13 +467,22 @@ function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventRolling?.roundId, eventRolling?.revealedIndex]);
 
-  const handleReset = () => {
+  const handleResetAll = () => {
     setRounds([]);
+    setActiveRoundId(null);
+    setEventRolling(null);
     setMembers([]);
     setExclusions([]);
     setMemberInput("");
     setExclA("");
     setExclB("");
+    setDefaultRoles({
+      TOP: { p1: "", p2: "" },
+      JUNGLE: { p1: "", p2: "" },
+      MID: { p1: "", p2: "" },
+      ADC: { p1: "", p2: "" },
+      SUPPORT: { p1: "", p2: "" },
+    });
     usedChampionsRef.current = new Set();
     roundIdRef.current = 0;
     if (typeof window !== "undefined") {
@@ -463,11 +494,16 @@ function HomePage() {
     }
   };
 
+  const handleResetResults = () => {
+    setRounds([]);
+    setActiveRoundId(null);
+    setEventRolling(null);
+    usedChampionsRef.current = new Set();
+    roundIdRef.current = 0;
+  };
+
   const activeRound = rounds.find((r) => r.id === activeRoundId) ?? null;
-  const activeLane =
-    activeRound && activeLaneIdx >= 0
-      ? activeRound.lanes[activeLaneIdx]
-      : null;
+  const activeLane = activeRound && activeLaneIdx >= 0 ? activeRound.lanes[activeLaneIdx] : null;
   const showArena = shuffling || activeLane != null;
 
   return (
@@ -492,8 +528,8 @@ function HomePage() {
               {eventRolling
                 ? `Round ${rounds.findIndex((r) => r.id === eventRolling.roundId) + 1} · Ông trời kêu vậy`
                 : activeRound && activeLane
-                ? `Round ${rounds.findIndex((r) => r.id === activeRound.id) + 1} · Lane ${activeLaneIdx + 1} / ${activeRound.lanes.length}`
-                : "Shuffle Arena"}
+                  ? `Round ${rounds.findIndex((r) => r.id === activeRound.id) + 1} · Lane ${activeLaneIdx + 1} / ${activeRound.lanes.length}`
+                  : "Shuffle Arena"}
             </h2>
             <div className="gold-divider my-3" />
             <div className="flex min-h-[360px] items-center justify-center">
@@ -534,7 +570,10 @@ function HomePage() {
           <section className={`space-y-6 ${inputsLocked ? "pointer-events-none opacity-60" : ""}`}>
             <div className="hextech-frame p-5">
               <h2 className="font-display text-lg uppercase tracking-[0.3em] text-gold-bright">
-                Summoners <span className="text-xs text-muted-foreground">({members.length}/{MAX_SUMMONERS})</span>
+                Summoners{" "}
+                <span className="text-xs text-muted-foreground">
+                  ({members.length}/{MAX_SUMMONERS})
+                </span>
               </h2>
               <div className="gold-divider my-3" />
 
@@ -575,24 +614,25 @@ function HomePage() {
                     No summoners yet. Add at least 2 to begin.
                   </li>
                 )}
-                {!hydrating && members.map((m, i) => (
-                  <li
-                    key={m}
-                    className="group flex items-center gap-2 border border-gold/50 bg-card/60 px-2 py-1"
-                  >
-                    <span className="text-xs text-muted-foreground">{i + 1}</span>
-                    <span className="font-display text-sm text-gold-bright">{m}</span>
-                    <button
-                      type="button"
-                      className="text-xs text-muted-foreground hover:text-destructive"
-                      onClick={() => removeMember(m)}
-                      aria-label={`Remove ${m}`}
-                      disabled={inputsLocked}
+                {!hydrating &&
+                  members.map((m, i) => (
+                    <li
+                      key={m}
+                      className="group flex items-center gap-2 border border-gold/50 bg-card/60 px-2 py-1"
                     >
-                      ✕
-                    </button>
-                  </li>
-                ))}
+                      <span className="text-xs text-muted-foreground">{i + 1}</span>
+                      <span className="font-display text-sm text-gold-bright">{m}</span>
+                      <button
+                        type="button"
+                        className="text-xs text-muted-foreground hover:text-destructive"
+                        onClick={() => removeMember(m)}
+                        aria-label={`Remove ${m}`}
+                        disabled={inputsLocked}
+                      >
+                        ✕
+                      </button>
+                    </li>
+                  ))}
               </ul>
             </div>
 
@@ -616,7 +656,11 @@ function HomePage() {
                         type="button"
                         onClick={() => setTeamSize(n)}
                         disabled={inputsLocked || tooSmall}
-                        title={tooSmall ? `Need at least ${minTeamSize}v${minTeamSize} for ${members.length} players` : undefined}
+                        title={
+                          tooSmall
+                            ? `Need at least ${minTeamSize}v${minTeamSize} for ${members.length} players`
+                            : undefined
+                        }
                         className={`btn-hex ${
                           teamSize === n ? "btn-hex-primary" : ""
                         } ${tooSmall ? "opacity-40 cursor-not-allowed" : ""}`}
@@ -628,48 +672,126 @@ function HomePage() {
                 </div>
               </div>
 
-              <ToggleRow
-                label="Randomize roles"
-                hint="Off: ADC → Support → Jungle → Mid → Top"
-                value={randomRole}
-                onChange={setRandomRole}
-              />
-              <ToggleRow
-                label="Randomize members"
-                hint="Off: split by entry order. On: reshuffle on every spin."
-                value={randomMembers}
-                onChange={setRandomMembers}
-              />
-
-              {/* Ông trời kêu vậy */}
-              <ToggleRow
-                label="Ông trời kêu vậy"
-                hint="Roll random in-game events after each round."
-                value={enableEvents}
-                onChange={setEnableEvents}
-              />
-              <div className={enableEvents ? "" : "opacity-50 pointer-events-none"}>
+              {/* Default role */}
+              <div className="space-y-2">
                 <label className="font-display text-xs uppercase tracking-[0.25em] text-muted-foreground">
-                  Số sự kiện
+                  Default role
                 </label>
-                <div className="mt-2 flex items-center gap-2">
-                  <input
-                    type="number"
-                    min={1}
-                    max={3}
-                    step={1}
-                    className="input-hex w-24"
-                    value={eventCount}
-                    disabled={!enableEvents || inputsLocked}
-                    onChange={(e) => {
-                      const v = Number(e.target.value);
-                      if (Number.isNaN(v)) return;
-                      setEventCount(Math.min(3, Math.max(1, Math.floor(v))));
-                    }}
+
+                <div className="border border-gold/20 bg-background/20 p-3 space-y-3 mt-2">
+                  <div className="grid grid-cols-[50px_1fr_1fr] gap-2 items-center text-center font-display text-[10px] uppercase tracking-wider text-muted-foreground border-b border-gold/15 pb-2">
+                    <div>Role</div>
+                    <div>Người chơi 1</div>
+                    <div>Người chơi 2</div>
+                  </div>
+
+                  {(["ADC", "SUPPORT", "JUNGLE", "MID", "TOP"] as Role[]).map((role) => {
+                    const meta = ROLE_META[role];
+
+                    const getAvailableOptions = (currentSlotKey: "p1" | "p2") => {
+                      const currentSelectedVal = defaultRoles[role][currentSlotKey];
+                      return members.filter((m) => {
+                        const isSelectedElsewhere = Object.entries(defaultRoles).some(
+                          ([r, config]) => {
+                            if (r === role) {
+                              if (currentSlotKey === "p1") {
+                                return config.p2 === m;
+                              } else {
+                                return config.p1 === m;
+                              }
+                            }
+                            return config.p1 === m || config.p2 === m;
+                          },
+                        );
+                        return !isSelectedElsewhere || m === currentSelectedVal;
+                      });
+                    };
+
+                    return (
+                      <div key={role} className="grid grid-cols-[50px_1fr_1fr] gap-2 items-center">
+                        <div className="flex justify-center items-center min-w-0">
+                          <img
+                            src={meta.iconUrl}
+                            alt={meta.label}
+                            className="w-6 h-6 shrink-0"
+                            style={{ filter: "drop-shadow(0 0 2px rgba(255,215,0,0.4))" }}
+                          />
+                        </div>
+
+                        <SummonerSelect
+                          value={defaultRoles[role].p1}
+                          onChange={(val) =>
+                            setDefaultRoles((prev) => ({
+                              ...prev,
+                              [role]: { ...prev[role], p1: val },
+                            }))
+                          }
+                          options={getAvailableOptions("p1")}
+                          placeholder="Chọn..."
+                          disabled={inputsLocked}
+                        />
+
+                        <SummonerSelect
+                          value={defaultRoles[role].p2}
+                          onChange={(val) =>
+                            setDefaultRoles((prev) => ({
+                              ...prev,
+                              [role]: { ...prev[role], p2: val },
+                            }))
+                          }
+                          options={getAvailableOptions("p2")}
+                          placeholder="Chọn..."
+                          disabled={inputsLocked}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Toggles */}
+              <div>
+                <label className="font-display text-xs uppercase tracking-[0.25em] text-muted-foreground">
+                  Additional Options
+                </label>
+                <div className="mt-2 space-y-4">
+                  {/* "Randomize roles" temporarily hidden */}
+                  <ToggleRow
+                    label="Randomize members"
+                    hint="Off: split by entry order. On: reshuffle on every spin."
+                    value={randomMembers}
+                    onChange={setRandomMembers}
                   />
-                  <span className="text-xs italic text-muted-foreground">
-                    1–3
-                  </span>
+
+                  {/* Ông trời kêu vậy */}
+                  <ToggleRow
+                    label="Ông trời kêu vậy"
+                    hint="Roll random in-game events after each round."
+                    value={enableEvents}
+                    onChange={setEnableEvents}
+                  />
+                  <div className={enableEvents ? "" : "opacity-50 pointer-events-none"}>
+                    <label className="font-display text-xs uppercase tracking-[0.25em] text-muted-foreground">
+                      Số sự kiện
+                    </label>
+                    <div className="mt-2 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min={1}
+                        max={3}
+                        step={1}
+                        className="input-hex w-24"
+                        value={eventCount}
+                        disabled={!enableEvents || inputsLocked}
+                        onChange={(e) => {
+                          const v = Number(e.target.value);
+                          if (Number.isNaN(v)) return;
+                          setEventCount(Math.min(3, Math.max(1, Math.floor(v))));
+                        }}
+                      />
+                      <span className="text-xs italic text-muted-foreground">1–3</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -690,9 +812,7 @@ function HomePage() {
                     onChange={(e) => {
                       const v = Number(e.target.value);
                       if (Number.isNaN(v)) return;
-                      setLaneSeconds(
-                        Math.min(MAX_LANE_SECONDS, Math.max(MIN_LANE_SECONDS, v))
-                      );
+                      setLaneSeconds(Math.min(MAX_LANE_SECONDS, Math.max(MIN_LANE_SECONDS, v)));
                     }}
                   />
                   <button
@@ -753,9 +873,7 @@ function HomePage() {
                           type="button"
                           className="text-xs text-muted-foreground hover:text-destructive"
                           onClick={() =>
-                            setExclusions((prev) =>
-                              prev.filter((_, idx) => idx !== i)
-                            )
+                            setExclusions((prev) => prev.filter((_, idx) => idx !== i))
                           }
                           disabled={inputsLocked}
                         >
@@ -788,18 +906,29 @@ function HomePage() {
                 </p>
               )}
               {!loadingChamps && !champsError && (
-                <p className="text-center text-xs text-muted-foreground">
-                  {champions.length} champions loaded · {totalLanes || 0} lane
-                  {totalLanes === 1 ? "" : "s"} ·{" "}
-                  <button
-                    className="underline hover:text-gold-bright disabled:opacity-50"
-                    onClick={handleReset}
-                    type="button"
-                    disabled={inputsLocked}
-                  >
-                    reset all
-                  </button>
-                </p>
+                <div className="flex flex-col items-center gap-3 pt-2">
+                  <p className="text-center text-xs text-muted-foreground">
+                    {champions.length} champions loaded · {totalLanes || 0} lane{totalLanes === 1 ? "" : "s"}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      className="btn-hex text-[10px] px-3 py-1.5"
+                      onClick={handleResetResults}
+                      type="button"
+                      disabled={inputsLocked || rounds.length === 0}
+                    >
+                      Reset Result
+                    </button>
+                    <button
+                      className="btn-hex text-[10px] px-3 py-1.5 border-destructive/50 text-destructive-foreground hover:bg-destructive/10"
+                      onClick={handleResetAll}
+                      type="button"
+                      disabled={inputsLocked}
+                    >
+                      Reset All
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </section>
@@ -810,12 +939,12 @@ function HomePage() {
             {!hydrating && rounds.length === 0 && <EmptyDraft />}
             {!hydrating &&
               rounds.map((r, idx) => (
-                <RoundView 
-                  key={r.id} 
-                  roundNumber={idx + 1} 
-                  round={r} 
-                  onReshuffle={startEventRoll} 
-                  disabled={inputsLocked} 
+                <RoundView
+                  key={r.id}
+                  roundNumber={idx + 1}
+                  round={r}
+                  onReshuffle={startEventRoll}
+                  disabled={inputsLocked}
                 />
               ))}
           </section>
@@ -873,9 +1002,7 @@ function EventCard({ event }: { event: GameEvent }) {
         <div className="font-display text-sm uppercase tracking-[0.18em] text-gold-bright">
           {event.name}
         </div>
-        <div className="mt-0.5 font-serif text-xs text-muted-foreground">
-          {event.content}
-        </div>
+        <div className="mt-0.5 font-serif text-xs text-muted-foreground">{event.content}</div>
       </div>
     </div>
   );
@@ -885,10 +1012,7 @@ function SummonerSkeleton({ count }: { count: number }) {
   return (
     <>
       {Array.from({ length: count }).map((_, i) => (
-        <li
-          key={i}
-          className="h-7 w-24 border border-gold/30 bg-gold/5 animate-pulse"
-        />
+        <li key={i} className="h-7 w-24 border border-gold/30 bg-gold/5 animate-pulse" />
       ))}
     </>
   );
@@ -911,9 +1035,7 @@ function ResultsSkeleton() {
 function Header() {
   return (
     <header className="text-center">
-      <p className="font-display text-xs uppercase tracking-[0.5em] text-gold">
-        CMVN
-      </p>
+      <p className="font-display text-xs uppercase tracking-[0.5em] text-gold">CMVN</p>
       <h1 className="mt-2 font-display text-4xl font-bold uppercase tracking-[0.2em] text-gold-bright text-glow-gold md:text-5xl">
         Xóm Nghẹo
       </h1>
@@ -936,7 +1058,17 @@ function TeamHeading({ side }: { side: "alpha" | "beta" }) {
     >
       {isAlpha ? (
         // Crossed swords (Alpha → aggression)
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
           <path d="M14.5 17.5 21 21l-1-4-3.5-3.5" />
           <path d="m3 3 7.5 7.5" />
           <path d="M9.5 17.5 3 21l1-4 3.5-3.5" />
@@ -944,7 +1076,17 @@ function TeamHeading({ side }: { side: "alpha" | "beta" }) {
         </svg>
       ) : (
         // Shield (Beta → defense)
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
           <path d="m9 12 2 2 4-4" />
         </svg>
@@ -955,8 +1097,6 @@ function TeamHeading({ side }: { side: "alpha" | "beta" }) {
     </span>
   );
 }
-
-
 
 function Footer() {
   return (
@@ -1013,11 +1153,7 @@ function ToggleRow({
         <div className="font-display text-sm uppercase tracking-[0.2em] text-gold-bright">
           {label}
         </div>
-        {hint && (
-          <div className="mt-0.5 text-xs italic text-muted-foreground">
-            {hint}
-          </div>
-        )}
+        {hint && <div className="mt-0.5 text-xs italic text-muted-foreground">{hint}</div>}
       </div>
       <div
         className={`relative h-6 w-12 shrink-0 border transition-colors ${
@@ -1041,25 +1177,97 @@ function SummonerSelect({
   onChange,
   options,
   placeholder,
+  disabled,
 }: {
   value: string;
   onChange: (v: string) => void;
   options: string[];
   placeholder: string;
+  disabled?: boolean;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="input-hex w-full"
-    >
-      <option value="">{placeholder}</option>
-      {options.map((m) => (
-        <option key={m} value={m}>
-          {m}
-        </option>
-      ))}
-    </select>
+    <div ref={containerRef} className="relative w-full text-left">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setIsOpen(!isOpen)}
+        className={`input-hex w-full flex items-center justify-between text-left py-2 px-3 transition-all ${
+          disabled ? "opacity-40 cursor-not-allowed" : "hover:border-gold hover:text-gold-bright"
+        }`}
+      >
+        <span
+          className={
+            value
+              ? "text-gold-bright font-display text-xs truncate"
+              : "text-muted-foreground text-xs truncate"
+          }
+        >
+          {value || placeholder}
+        </span>
+        <svg
+          className={`w-3.5 h-3.5 text-gold transition-transform duration-200 shrink-0 ml-1 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isOpen && !disabled && (
+        <div className="absolute left-0 right-0 mt-1 z-[100]">
+          <div className="hextech-frame border-gold bg-background/95 shadow-xl max-h-60 overflow-y-auto animate-fade-in custom-scrollbar">
+            <ul>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange("");
+                    setIsOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-[10px] italic text-muted-foreground hover:bg-gold/10 hover:text-gold-bright transition-colors"
+                >
+                  -- {placeholder} --
+                </button>
+              </li>
+              {options.map((option) => (
+                <li key={option}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChange(option);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-xs font-display transition-colors ${
+                      value === option
+                        ? "bg-gold/25 text-gold-bright border-l-2 border-gold-bright"
+                        : "text-muted-foreground hover:bg-gold/10 hover:text-gold-bright"
+                    }`}
+                  >
+                    {option}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1176,11 +1384,7 @@ function RoundView({
                     champ={lane.alphaChamp}
                     color="var(--team-alpha)"
                   />
-                  <TeamCell
-                    name={lane.betaName}
-                    champ={lane.betaChamp}
-                    color="var(--team-beta)"
-                  />
+                  <TeamCell name={lane.betaName} champ={lane.betaChamp} color="var(--team-beta)" />
                 </tr>
               ))}
             </tbody>
@@ -1216,7 +1420,10 @@ function TeamCell({
           <img src={champ.squareUrl} alt={champ.name} className="h-full w-full object-cover" />
         </div>
         <div className="min-w-0">
-          <div className="font-display text-sm tracking-wide truncate" style={{ color, textShadow: `0 0 8px ${color}` }}>
+          <div
+            className="font-display text-sm tracking-wide truncate"
+            style={{ color, textShadow: `0 0 8px ${color}` }}
+          >
             {name}
           </div>
           <div className="text-xs text-gold-bright truncate">{champ.name}</div>

@@ -101,8 +101,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             "Công cụ random team, lane, tướng cho Liên Minh Huyền Thoại — custom, ARAM, đấu nội bộ.",
           potentialAction: {
             "@type": "SearchAction",
-            target:
-              "https://random-team-lol.lovable.app/?q={search_term_string}",
+            target: "https://random-team-lol.lovable.app/?q={search_term_string}",
             "query-input": "required name=search_term_string",
           },
           publisher: {

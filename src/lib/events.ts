@@ -3,9 +3,9 @@
 
 export type GameEvent = {
   id: string;
-  name: string;     // short display name shown during the roll
+  name: string; // short display name shown during the roll
   time: number | null; // minute mark; null = no specific time
-  content: string;  // full description
+  content: string; // full description
 };
 
 export const EVENTS: GameEvent[] = [
@@ -100,7 +100,8 @@ export const EVENTS: GameEvent[] = [
     id: "long-way-home",
     name: "Đường về nhà xa quá",
     time: 7,
-    content: "Summoner truyền tống về bệ đá trong vòng 3 phút, chỉ cho phép hồi sinh hoặc đi bộ về.",
+    content:
+      "Summoner truyền tống về bệ đá trong vòng 3 phút, chỉ cho phép hồi sinh hoặc đi bộ về.",
   },
 ];
 

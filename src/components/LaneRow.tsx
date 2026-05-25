@@ -1,10 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  ROLE_META,
-  ROLES_ORDER,
-  type Champion,
-  type Role,
-} from "@/lib/lol-api";
+import { ROLE_META, ROLES_ORDER, type Champion, type Role } from "@/lib/lol-api";
 import { SlotMachine } from "./SlotMachine";
 import { ChampionStrip } from "./ChampionStrip";
 
@@ -83,7 +78,7 @@ export function LaneRow({
       if (!alphaChampion) {
         const t = setTimeout(
           () => setPhase(betaChampion ? "pre-champ-beta" : "done"),
-          PRE_DELAY_MS
+          PRE_DELAY_MS,
         );
         return () => clearTimeout(t);
       }
@@ -106,10 +101,8 @@ export function LaneRow({
 
   const roleMeta = ROLE_META[finalRole];
 
-  const isPastRole =
-    phase !== "idle" && phase !== "pre-role" && phase !== "role";
-  const isPastMembers =
-    isPastRole && phase !== "pre-members" && phase !== "members";
+  const isPastRole = phase !== "idle" && phase !== "pre-role" && phase !== "role";
+  const isPastMembers = isPastRole && phase !== "pre-members" && phase !== "members";
 
   const roleNode = (() => {
     if (phase === "idle" || phase === "pre-role") {
@@ -129,7 +122,12 @@ export function LaneRow({
           onDone={() => setPhase("pre-members")}
           renderItem={(r) => (
             <div className="flex items-center gap-3">
-              <img src={ROLE_META[r].iconUrl} alt={r} className="h-10 w-10" style={{ filter: "drop-shadow(0 0 6px var(--gold))" }} />
+              <img
+                src={ROLE_META[r].iconUrl}
+                alt={r}
+                className="h-10 w-10"
+                style={{ filter: "drop-shadow(0 0 6px var(--gold))" }}
+              />
               <span className="font-display text-2xl uppercase tracking-widest text-gold-bright">
                 {ROLE_META[r].label}
               </span>
@@ -140,7 +138,12 @@ export function LaneRow({
     }
     return (
       <div className="hextech-frame flex h-20 items-center justify-center gap-3">
-        <img src={roleMeta.iconUrl} alt={finalRole} className="h-10 w-10" style={{ filter: "drop-shadow(0 0 8px var(--gold-bright))" }} />
+        <img
+          src={roleMeta.iconUrl}
+          alt={finalRole}
+          className="h-10 w-10"
+          style={{ filter: "drop-shadow(0 0 8px var(--gold-bright))" }}
+        />
         <span className="font-display text-2xl uppercase tracking-widest text-gold-bright text-glow-gold">
           {roleMeta.label}
         </span>
@@ -193,17 +196,17 @@ export function LaneRow({
     }
     return (
       <div className="hextech-frame flex h-14 items-center justify-center">
-        <span className="font-display text-lg tracking-wide" style={{ color, textShadow: `0 0 10px ${color}` }}>
+        <span
+          className="font-display text-lg tracking-wide"
+          style={{ color, textShadow: `0 0 10px ${color}` }}
+        >
           {name}
         </span>
       </div>
     );
   };
 
-  const renderChampSlot = (
-    side: "alpha" | "beta",
-    champ: Champion | null
-  ) => {
+  const renderChampSlot = (side: "alpha" | "beta", champ: Champion | null) => {
     if (!champ) {
       return (
         <div className="hextech-frame flex h-32 items-center justify-center text-muted-foreground italic">
@@ -216,8 +219,7 @@ export function LaneRow({
 
     const beforeMe =
       !isPastMembers ||
-      (side === "beta" &&
-        (phase === "pre-champ-alpha" || phase === "champ-alpha"));
+      (side === "beta" && (phase === "pre-champ-alpha" || phase === "champ-alpha"));
 
     if (beforeMe) {
       return (
@@ -252,8 +254,12 @@ export function LaneRow({
           <img src={champ.squareUrl} alt={champ.name} className="h-full w-full object-cover" />
         </div>
         <div className="min-w-0">
-          <div className="font-display text-lg text-gold-bright text-glow-gold truncate">{champ.name}</div>
-          <div className="font-serif text-xs italic text-muted-foreground truncate">{champ.title}</div>
+          <div className="font-display text-lg text-gold-bright text-glow-gold truncate">
+            {champ.name}
+          </div>
+          <div className="font-serif text-xs italic text-muted-foreground truncate">
+            {champ.title}
+          </div>
         </div>
       </div>
     );

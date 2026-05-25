@@ -45,8 +45,7 @@ export function ChampionStrip({ pool, finalChampion, durationMs, onDone }: Props
 
     const startTimer = setTimeout(() => {
       const containerW = containerRef.current?.clientWidth ?? 600;
-      const target =
-        finalIndex * STEP - containerW / 2 + ITEM_W / 2 + jitter;
+      const target = finalIndex * STEP - containerW / 2 + ITEM_W / 2 + jitter;
       setTransitioning(true);
       setTranslateX(target);
     }, 30);
