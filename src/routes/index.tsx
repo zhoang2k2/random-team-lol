@@ -674,9 +674,27 @@ function HomePage() {
 
               {/* Default role */}
               <div className="space-y-2">
-                <label className="font-display text-xs uppercase tracking-[0.25em] text-muted-foreground">
-                  Default role
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="font-display text-xs uppercase tracking-[0.25em] text-muted-foreground">
+                    Default role
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setDefaultRoles({
+                        TOP: { p1: "", p2: "" },
+                        JUNGLE: { p1: "", p2: "" },
+                        MID: { p1: "", p2: "" },
+                        ADC: { p1: "", p2: "" },
+                        SUPPORT: { p1: "", p2: "" },
+                      })
+                    }
+                    className="text-[10px] text-muted-foreground hover:text-gold-bright transition-colors uppercase tracking-wider font-display"
+                    disabled={inputsLocked}
+                  >
+                    Clear
+                  </button>
+                </div>
 
                 <div className="border border-gold/20 bg-background/20 p-3 space-y-3 mt-2">
                   <div className="grid grid-cols-[50px_1fr_1fr] gap-2 items-center text-center font-display text-[10px] uppercase tracking-wider text-muted-foreground border-b border-gold/15 pb-2">
@@ -685,67 +703,112 @@ function HomePage() {
                     <div>Người chơi 2</div>
                   </div>
 
-                  {(["ADC", "SUPPORT", "JUNGLE", "MID", "TOP"] as Role[]).map((role) => {
-                    const meta = ROLE_META[role];
+                  {(() => {
+                    const activeMembers = members.slice(0, teamSize * 2);
+                    const lanesNeeded = Math.ceil(activeMembers.length / 2);
+                    
+                    const activeRoleKeys = (["ADC", "SUPPORT", "JUNGLE", "MID", "TOP"] as Role[]).filter(r => 
+                      (defaultRoles[r].p1 && activeMembers.includes(defaultRoles[r].p1)) || 
+                      (defaultRoles[r].p2 && activeMembers.includes(defaultRoles[r].p2))
+                    );
+                    
+                    const maxLanesReached = activeRoleKeys.length >= lanesNeeded;
 
-                    const getAvailableOptions = (currentSlotKey: "p1" | "p2") => {
-                      const currentSelectedVal = defaultRoles[role][currentSlotKey];
-                      return members.filter((m) => {
-                        const isSelectedElsewhere = Object.entries(defaultRoles).some(
-                          ([r, config]) => {
-                            if (r === role) {
-                              if (currentSlotKey === "p1") {
-                                return config.p2 === m;
-                              } else {
-                                return config.p1 === m;
+                    return (["ADC", "SUPPORT", "JUNGLE", "MID", "TOP"] as Role[]).map((role) => {
+                      const meta = ROLE_META[role];
+                      const isRoleActive = activeRoleKeys.includes(role);
+                      const isRoleDisabled = maxLanesReached && !isRoleActive;
+
+                      const getAvailableOptions = (currentSlotKey: "p1" | "p2") => {
+                        const currentSelectedVal = defaultRoles[role][currentSlotKey];
+                        return members.filter((m) => {
+                          const isSelectedElsewhere = Object.entries(defaultRoles).some(
+                            ([r, config]) => {
+                              if (r === role) {
+                                if (currentSlotKey === "p1") {
+                                  return config.p2 === m;
+                                } else {
+                                  return config.p1 === m;
+                                }
                               }
-                            }
-                            return config.p1 === m || config.p2 === m;
-                          },
-                        );
-                        return !isSelectedElsewhere || m === currentSelectedVal;
-                      });
-                    };
+                              return config.p1 === m || config.p2 === m;
+                            },
+                          );
+                          return !isSelectedElsewhere || m === currentSelectedVal;
+                        });
+                      };
 
-                    return (
-                      <div key={role} className="grid grid-cols-[50px_1fr_1fr] gap-2 items-center">
-                        <div className="flex justify-center items-center min-w-0">
-                          <img
-                            src={meta.iconUrl}
-                            alt={meta.label}
-                            className="w-6 h-6 shrink-0"
-                            style={{ filter: "drop-shadow(0 0 2px rgba(255,215,0,0.4))" }}
+                      const handleRoleChange = (slotKey: "p1" | "p2", val: string) => {
+                        setDefaultRoles((prev) => {
+                          let next = { ...prev, [role]: { ...prev[role], [slotKey]: val } };
+                          let changed = true;
+                          while (changed) {
+                            changed = false;
+                            const assigned = new Set<string>();
+                            const currentActiveRoles: Role[] = [];
+                            
+                            for (const r of ["ADC", "SUPPORT", "JUNGLE", "MID", "TOP"] as Role[]) {
+                              let isActive = false;
+                              if (next[r].p1 && activeMembers.includes(next[r].p1)) {
+                                assigned.add(next[r].p1);
+                                isActive = true;
+                              }
+                              if (next[r].p2 && activeMembers.includes(next[r].p2)) {
+                                assigned.add(next[r].p2);
+                                isActive = true;
+                              }
+                              if (isActive) currentActiveRoles.push(r);
+                            }
+                            
+                            const unassigned = activeMembers.filter(m => !assigned.has(m));
+                            const allowedRoles = currentActiveRoles.length >= lanesNeeded ? currentActiveRoles : (["ADC", "SUPPORT", "JUNGLE", "MID", "TOP"] as Role[]);
+                            
+                            const emptySlots: { r: Role; s: "p1" | "p2" }[] = [];
+                            for (const r of allowedRoles) {
+                              if (!next[r].p1 || !activeMembers.includes(next[r].p1)) emptySlots.push({ r, s: "p1" });
+                              if (!next[r].p2 || !activeMembers.includes(next[r].p2)) emptySlots.push({ r, s: "p2" });
+                            }
+                            
+                            if (unassigned.length === 1 && emptySlots.length === 1) {
+                              const target = emptySlots[0];
+                              next = { ...next, [target.r]: { ...next[target.r], [target.s]: unassigned[0] } };
+                              changed = true;
+                            }
+                          }
+                          return next;
+                        });
+                      };
+
+                      return (
+                        <div key={role} className={`grid grid-cols-[50px_1fr_1fr] gap-2 items-center transition-opacity duration-300 ${isRoleDisabled ? "opacity-30" : ""}`}>
+                          <div className="flex justify-center items-center min-w-0" title={isRoleDisabled ? "Đã đạt đủ số lượng lane tối đa" : ""}>
+                            <img
+                              src={meta.iconUrl}
+                              alt={meta.label}
+                              className="w-6 h-6 shrink-0"
+                              style={{ filter: "drop-shadow(0 0 2px rgba(255,215,0,0.4))" }}
+                            />
+                          </div>
+
+                          <SummonerSelect
+                            value={defaultRoles[role].p1}
+                            onChange={(val) => handleRoleChange("p1", val)}
+                            options={getAvailableOptions("p1")}
+                            placeholder="Chọn..."
+                            disabled={inputsLocked || isRoleDisabled}
+                          />
+
+                          <SummonerSelect
+                            value={defaultRoles[role].p2}
+                            onChange={(val) => handleRoleChange("p2", val)}
+                            options={getAvailableOptions("p2")}
+                            placeholder="Chọn..."
+                            disabled={inputsLocked || isRoleDisabled}
                           />
                         </div>
-
-                        <SummonerSelect
-                          value={defaultRoles[role].p1}
-                          onChange={(val) =>
-                            setDefaultRoles((prev) => ({
-                              ...prev,
-                              [role]: { ...prev[role], p1: val },
-                            }))
-                          }
-                          options={getAvailableOptions("p1")}
-                          placeholder="Chọn..."
-                          disabled={inputsLocked}
-                        />
-
-                        <SummonerSelect
-                          value={defaultRoles[role].p2}
-                          onChange={(val) =>
-                            setDefaultRoles((prev) => ({
-                              ...prev,
-                              [role]: { ...prev[role], p2: val },
-                            }))
-                          }
-                          options={getAvailableOptions("p2")}
-                          placeholder="Chọn..."
-                          disabled={inputsLocked}
-                        />
-                      </div>
-                    );
-                  })}
+                      );
+                    });
+                  })()}
                 </div>
               </div>
 
