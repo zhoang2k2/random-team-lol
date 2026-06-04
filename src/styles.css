@@ -45,50 +45,50 @@
   --radius: 0.25rem;
 
   /* LoL inspired dark hextech palette */
-  --background: oklch(0.16 0.025 230);
-  --foreground: oklch(0.92 0.02 80);
+  --background: #030f16;
+  --foreground: #ece3d6;
 
-  --card: oklch(0.20 0.03 230);
-  --card-foreground: oklch(0.92 0.02 80);
+  --card: #061821;
+  --card-foreground: #ece3d6;
 
-  --popover: oklch(0.18 0.03 230);
-  --popover-foreground: oklch(0.92 0.02 80);
+  --popover: #03141c;
+  --popover-foreground: #ece3d6;
 
-  --primary: oklch(0.78 0.13 80);
+  --primary: #e3ad4b;
   /* gold */
-  --primary-foreground: oklch(0.14 0.025 230);
+  --primary-foreground: #010b11;
 
-  --secondary: oklch(0.25 0.04 220);
-  --secondary-foreground: oklch(0.92 0.02 80);
+  --secondary: #06262f;
+  --secondary-foreground: #ece3d6;
 
-  --muted: oklch(0.22 0.03 230);
-  --muted-foreground: oklch(0.65 0.025 80);
+  --muted: #0a1d26;
+  --muted-foreground: #978e7e;
 
-  --accent: oklch(0.65 0.15 200);
+  --accent: #00a9b3;
   /* hextech teal */
-  --accent-foreground: oklch(0.14 0.025 230);
+  --accent-foreground: #010b11;
 
-  --destructive: oklch(0.58 0.22 25);
-  --destructive-foreground: oklch(0.98 0 0);
+  --destructive: #df202e;
+  --destructive-foreground: #f8f8f8;
 
-  --border: oklch(0.42 0.06 80 / 50%);
-  --input: oklch(0.25 0.03 230);
-  --ring: oklch(0.78 0.13 80);
+  --border: rgba(94, 73, 37, 0.5);
+  --input: #11242d;
+  --ring: #e3ad4b;
 
-  --gold: oklch(0.78 0.13 80);
-  --gold-bright: oklch(0.88 0.14 85);
-  --gold-deep: oklch(0.55 0.10 75);
-  --hextech: oklch(0.70 0.16 200);
-  --hextech-glow: oklch(0.80 0.18 195);
+  --gold: #e3ad4b;
+  --gold-bright: #ffd060;
+  --gold-deep: #936823;
+  --hextech: #00bac5;
+  --hextech-glow: #00dfe1;
 
-  --team-alpha: oklch(0.65 0.18 235);
+  --team-alpha: #009cec;
   /* blue side */
-  --team-beta: oklch(0.62 0.20 25);
+  --team-beta: #e64343;
   /* red side */
 }
 
 .dark {
-  --background: oklch(0.14 0.025 230);
+  --background: #010b11;
 }
 
 @layer base {
@@ -105,9 +105,9 @@
 
   body {
     background-image:
-      radial-gradient(ellipse at top, oklch(0.22 0.05 220 / 60%) 0%, transparent 60%),
-      radial-gradient(ellipse at bottom, oklch(0.18 0.04 240 / 50%) 0%, transparent 60%),
-      linear-gradient(180deg, oklch(0.13 0.02 230) 0%, oklch(0.10 0.02 235) 100%);
+      radial-gradient(ellipse at top, rgba(0, 31, 42, 0.6) 0%, transparent 60%),
+      radial-gradient(ellipse at bottom, rgba(0, 19, 33, 0.5) 0%, transparent 60%),
+      linear-gradient(180deg, #02090e 0%, #000408 100%);
     background-attachment: fixed;
     min-height: 100vh;
   }
@@ -147,11 +147,11 @@
   .hextech-frame {
     position: relative;
     background:
-      linear-gradient(180deg, oklch(0.20 0.03 230 / 95%), oklch(0.16 0.03 235 / 95%));
+      linear-gradient(180deg, rgba(6, 24, 33, 0.95), rgba(1, 15, 24, 0.95));
     border: 1px solid var(--gold-deep);
     box-shadow:
-      inset 0 0 0 1px oklch(0.30 0.05 80 / 30%),
-      0 0 24px oklch(0.50 0.10 200 / 15%);
+      inset 0 0 0 1px rgba(59, 43, 13, 0.3),
+      0 0 24px rgba(0, 116, 122, 0.15);
   }
 
   .hextech-frame::before,
@@ -189,11 +189,11 @@
   }
 
   .text-glow-gold {
-    text-shadow: 0 0 12px oklch(0.78 0.15 80 / 60%);
+    text-shadow: 0 0 12px rgba(233, 171, 43, 0.6);
   }
 
   .text-glow-hextech {
-    text-shadow: 0 0 16px oklch(0.70 0.18 200 / 70%);
+    text-shadow: 0 0 16px rgba(0, 189, 202, 0.7);
   }
 
   .btn-hex {
@@ -201,7 +201,7 @@
     text-transform: uppercase;
     letter-spacing: 0.15em;
     color: var(--gold-bright);
-    background: linear-gradient(180deg, oklch(0.22 0.04 230), oklch(0.16 0.03 235));
+    background: linear-gradient(180deg, #0a1d26, #010f18);
     border: 1px solid var(--gold);
     padding: 0.65rem 1.25rem;
     transition: all 0.2s ease;
@@ -210,9 +210,9 @@
   }
 
   .btn-hex:hover:not(:disabled) {
-    background: linear-gradient(180deg, oklch(0.28 0.05 220), oklch(0.20 0.04 230));
-    box-shadow: 0 0 20px oklch(0.78 0.15 80 / 40%);
-    color: oklch(0.95 0.10 85);
+    background: linear-gradient(180deg, #012e3a, #001925);
+    box-shadow: 0 0 20px rgba(233, 171, 43, 0.4);
+    color: #ffeaa0;
   }
 
   .btn-hex:disabled {
@@ -221,21 +221,34 @@
   }
 
   .btn-hex-primary {
-    background: linear-gradient(180deg, oklch(0.45 0.10 75), oklch(0.30 0.07 70));
-    color: oklch(0.95 0.05 85);
+    background: linear-gradient(180deg, #754b00, #442600);
+    color: #feedc9;
     border-color: var(--gold-bright);
   }
 
   .btn-hex-primary:hover:not(:disabled) {
-    background: linear-gradient(180deg, oklch(0.55 0.12 80), oklch(0.40 0.09 75));
-    box-shadow: 0 0 28px oklch(0.78 0.18 80 / 60%);
+    background: linear-gradient(180deg, #966800, #633f00);
+    box-shadow: 0 0 28px rgba(242, 167, 0, 0.6);
+  }
+
+  .btn-hex-danger {
+    background: linear-gradient(180deg, #6b1120, #3d070f);
+    color: #fcd3d3;
+    border-color: #df202e;
+  }
+
+  .btn-hex-danger:hover:not(:disabled) {
+    background: linear-gradient(180deg, #8c1a2b, #520b15);
+    box-shadow: 0 0 28px rgba(223, 32, 46, 0.6);
+    color: #fff0f0;
+    border-color: #ff4d61;
   }
 
   .input-hex {
-    background: oklch(0.12 0.02 230 / 80%);
+    background: rgba(1, 7, 11, 0.8);
     border: 1px solid var(--gold-deep);
     color: var(--foreground);
-    padding: 0.6rem 0.85rem;
+    padding: 0.4rem 0.85rem;
     font-family: var(--font-serif);
     transition: border-color 0.2s, box-shadow 0.2s;
   }
@@ -243,7 +256,7 @@
   .input-hex:focus {
     outline: none;
     border-color: var(--gold-bright);
-    box-shadow: 0 0 0 1px var(--gold), 0 0 12px oklch(0.78 0.15 80 / 30%);
+    box-shadow: 0 0 0 1px var(--gold), 0 0 12px rgba(233, 171, 43, 0.3);
   }
 
   /* CSGO scroll strip */
@@ -256,11 +269,11 @@
 
     0%,
     100% {
-      box-shadow: 0 0 12px oklch(0.78 0.15 80 / 30%);
+      box-shadow: 0 0 12px rgba(233, 171, 43, 0.3);
     }
 
     50% {
-      box-shadow: 0 0 28px oklch(0.78 0.18 80 / 70%);
+      box-shadow: 0 0 28px rgba(242, 167, 0, 0.7);
     }
   }
 
