@@ -9,40 +9,39 @@ export type Champion = {
   squareUrl: string; // 120x120 portrait
   splashUrl: string; // loading splash
 };
-
 export type Role = "TOP" | "JUNGLE" | "MID" | "ADC" | "SUPPORT";
-export const ROLES_ORDER: Role[] = ["ADC", "SUPPORT", "JUNGLE", "MID", "TOP"];
+export const ROLES_ORDER: Role[] = ["TOP", "JUNGLE", "MID", "ADC", "SUPPORT"];
 
 export const ROLE_META: Record<Role, { label: string; iconUrl: string; color: string }> = {
   TOP: {
     label: "Top",
     iconUrl:
       "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/svg/position-top.svg",
-    color: "oklch(0.70 0.14 60)",
+    color: "#dd8736",
   },
   JUNGLE: {
     label: "Jungle",
     iconUrl:
       "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/svg/position-jungle.svg",
-    color: "oklch(0.65 0.16 145)",
+    color: "#43a84c",
   },
   MID: {
     label: "Mid",
     iconUrl:
       "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/svg/position-middle.svg",
-    color: "oklch(0.72 0.16 320)",
+    color: "#d080e2",
   },
   ADC: {
     label: "ADC",
     iconUrl:
       "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/svg/position-bottom.svg",
-    color: "oklch(0.70 0.18 30)",
+    color: "#fa6a57",
   },
   SUPPORT: {
     label: "Support",
     iconUrl:
       "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/svg/position-utility.svg",
-    color: "oklch(0.70 0.16 200)",
+    color: "#00bac5",
   },
 };
 
