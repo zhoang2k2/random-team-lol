@@ -10,7 +10,6 @@ import {
 } from "@/lib/lol-api";
 import { buildLanePairings, type ExclusionPair } from "@/lib/randomize";
 import { LaneRow } from "@/components/LaneRow";
-import { EVENTS, formatEventTime, pickEvents, type GameEvent } from "@/lib/events";
 import { InternalNav } from "@/components/InternalNav";
 import { DndContext, type DragEndEvent } from "@dnd-kit/core";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
@@ -88,7 +87,6 @@ type Round = {
   id: number;
   lanes: RoundLane[];
   revealed: number; // count of lanes already revealed in table
-  events: GameEvent[]; // rolled events for this round (empty if disabled)
 };
 
 const INTER_LANE_GAP_MS = 1000;
@@ -96,7 +94,6 @@ const MIN_LANE_SECONDS = 2;
 const MAX_LANE_SECONDS = 30;
 const DEFAULT_LANE_SECONDS = MIN_LANE_SECONDS;
 const MAX_SUMMONERS = 10;
-const EVENT_ROLL_MS = 200; // 0.2s per event roll
 const STORAGE_KEY = "summoners-draft-state-v1";
 
 type PersistedState = {
@@ -111,8 +108,6 @@ type PersistedState = {
   rounds: Round[];
   usedChampionIds: string[];
   roundIdSeed: number;
-  enableEvents: boolean;
-  eventCount: number;
   defaultRoles?: Record<Role, { p1: string; p2: string }>;
 };
 
@@ -214,8 +209,6 @@ function HomePage() {
   const [selectedRoundIds, setSelectedRoundIds] = useState<Set<number>>(new Set());
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [screenshotChooserOpen, setScreenshotChooserOpen] = useState(false);
-  const [enableEvents, setEnableEvents] = useState<boolean>(false);
-  const [eventCount, setEventCount] = useState<number>(1);
   const [defaultRoles, setDefaultRoles] = useState<Record<Role, { p1: string; p2: string }>>({
     TOP: { p1: "", p2: "" },
     JUNGLE: { p1: "", p2: "" },
@@ -232,19 +225,11 @@ function HomePage() {
   const [shuffling, setShuffling] = useState(false);
   const [activeRoundId, setActiveRoundId] = useState<number | null>(null);
   const [activeLaneIdx, setActiveLaneIdx] = useState<number>(-1);
-  const [eventRolling, setEventRolling] = useState<{
-    roundId: number;
-    pool: GameEvent[];
-    final: GameEvent[];
-    revealedIndex: number;
-    currentName: string;
-  } | null>(null);
   const [hydrating, setHydrating] = useState<boolean>(false);
   const [hydrated, setHydrated] = useState<boolean>(false);
   const usedChampionsRef = useRef<Set<string>>(new Set());
   const roundIdRef = useRef(0);
   const gapTimerRef = useRef<number | null>(null);
-  const eventTimerRef = useRef<number | null>(null);
   const arenaRef = useRef<HTMLDivElement | null>(null);
   const resultsRef = useRef<HTMLDivElement | null>(null);
 
@@ -265,12 +250,9 @@ function HomePage() {
       if (persisted.exclusions) setExclusions(persisted.exclusions);
       if (typeof persisted.laneSeconds === "number") setLaneSeconds(persisted.laneSeconds);
       if (typeof persisted.skipAnimation === "boolean") setSkipAnimation(persisted.skipAnimation);
-      if (typeof persisted.enableEvents === "boolean") setEnableEvents(persisted.enableEvents);
-      if (typeof persisted.eventCount === "number")
-        setEventCount(Math.min(3, Math.max(1, persisted.eventCount)));
       if (persisted.defaultRoles) setDefaultRoles(persisted.defaultRoles);
       if (persisted.rounds)
-        setRounds(persisted.rounds.map((r) => ({ ...r, events: r.events ?? [] })));
+        setRounds(persisted.rounds.map((r) => ({ ...r })));
       if (persisted.rounds && persisted.rounds.length > 0) {
         setShowSummoners(false);
       }
@@ -300,7 +282,6 @@ function HomePage() {
     return () => {
       alive = false;
       if (gapTimerRef.current) window.clearTimeout(gapTimerRef.current);
-      if (eventTimerRef.current) window.clearTimeout(eventTimerRef.current);
     };
   }, []);
 
@@ -326,8 +307,6 @@ function HomePage() {
       rounds,
       usedChampionIds: Array.from(usedChampionsRef.current),
       roundIdSeed: roundIdRef.current,
-      enableEvents,
-      eventCount,
       defaultRoles,
     };
     try {
@@ -345,8 +324,6 @@ function HomePage() {
     laneSeconds,
     skipAnimation,
     rounds,
-    enableEvents,
-    eventCount,
     defaultRoles,
   ]);
 
@@ -506,15 +483,10 @@ function HomePage() {
       };
     });
     roundIdRef.current += 1;
-    const finalEvents =
-      skipAnimation && enableEvents
-        ? pickEvents(Math.max(0, Math.min(Math.floor(eventCount) || 0, EVENTS.length)))
-        : [];
     const newRound: Round = {
       id: roundIdRef.current,
       lanes,
       revealed: skipAnimation ? lanes.length : 0,
-      events: finalEvents,
     };
     setRounds((prev) => [...prev, newRound]);
     setShowSummoners(false);
@@ -536,49 +508,21 @@ function HomePage() {
     }
   };
 
-  const startEventRoll = (roundId: number, countOverride?: number) => {
-    const desiredCount = countOverride !== undefined ? countOverride : eventCount;
-    const desired = Math.max(0, Math.min(Math.floor(desiredCount) || 0, EVENTS.length));
-    if ((!enableEvents && countOverride === undefined) || desired === 0) {
-      finishRound(roundId);
-      return;
-    }
-    const finals = pickEvents(desired);
-
-    // Clear the events of the round we are re-rolling
-    setRounds((prev) => prev.map((r) => (r.id === roundId ? { ...r, events: [] } : r)));
-
-    setEventRolling({
-      roundId,
-      pool: EVENTS,
-      final: finals,
-      revealedIndex: 0,
-      currentName: EVENTS[0].name,
-    });
-    setShuffling(true); // make sure inputs are locked during reshuffle
-    requestAnimationFrame(() => {
-      arenaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
+  const startEventRoll = (roundId: number) => {
+    finishRound(roundId);
   };
 
   const handleStopShuffle = () => {
     if (gapTimerRef.current) window.clearTimeout(gapTimerRef.current);
-    if (eventTimerRef.current) window.clearTimeout(eventTimerRef.current);
-    setRounds((prev) =>
-      prev.filter(
-        (r) => r.id !== activeRoundId && (!eventRolling || r.id !== eventRolling.roundId),
-      ),
-    );
+    setRounds((prev) => prev.filter((r) => r.id !== activeRoundId));
     setShuffling(false);
     setActiveRoundId(null);
     setActiveLaneIdx(-1);
-    setEventRolling(null);
   };
 
   const finishRound = (_roundId: number) => {
     setShuffling(false);
     setActiveRoundId(null);
-    setEventRolling(null);
     window.setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 200);
@@ -607,53 +551,10 @@ function HomePage() {
     }, INTER_LANE_GAP_MS);
   };
 
-  // Drive event roll: every EVENT_ROLL_MS we flicker the name; once we land on
-  // each final event we commit it and continue with the next.
-  useEffect(() => {
-    if (!eventRolling) return;
-    const { roundId, pool, final, revealedIndex } = eventRolling;
-
-    if (revealedIndex >= final.length) {
-      // commit events into the round, then finish
-      setRounds((prev) => prev.map((r) => (r.id === roundId ? { ...r, events: final } : r)));
-      const t = window.setTimeout(() => finishRound(roundId), 400);
-      return () => window.clearTimeout(t);
-    }
-
-    // Flicker: pick a random name from pool, then after ROLL_MS commit & advance
-    let flickers = 6; // ~ a few flickers per event
-    const tick = () => {
-      flickers -= 1;
-      const rnd = pool[Math.floor(Math.random() * pool.length)];
-      setEventRolling((prev) =>
-        prev && prev.roundId === roundId ? { ...prev, currentName: rnd.name } : prev,
-      );
-      if (flickers <= 0) {
-        // settle on the actual final event
-        setEventRolling((prev) =>
-          prev && prev.roundId === roundId
-            ? {
-                ...prev,
-                currentName: final[revealedIndex].name,
-                revealedIndex: revealedIndex + 1,
-              }
-            : prev,
-        );
-        return;
-      }
-      eventTimerRef.current = window.setTimeout(tick, EVENT_ROLL_MS);
-    };
-    eventTimerRef.current = window.setTimeout(tick, EVENT_ROLL_MS);
-    return () => {
-      if (eventTimerRef.current) window.clearTimeout(eventTimerRef.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventRolling?.roundId, eventRolling?.revealedIndex]);
 
   const handleResetAll = () => {
     setRounds([]);
     setActiveRoundId(null);
-    setEventRolling(null);
     setSummoners([]);
     setExclusions([]);
     setMemberInput("");
@@ -680,7 +581,6 @@ function HomePage() {
   const handleResetResults = () => {
     setRounds([]);
     setActiveRoundId(null);
-    setEventRolling(null);
     usedChampionsRef.current = new Set();
     roundIdRef.current = 0;
   };
@@ -748,7 +648,6 @@ function HomePage() {
   const activeRound = rounds.find((r) => r.id === activeRoundId) ?? null;
   const activeLane = activeRound && activeLaneIdx >= 0 ? activeRound.lanes[activeLaneIdx] : null;
   const showArena = shuffling || activeLane != null;
-
   return (
     <div className="min-h-screen px-4 py-8 md:px-8 lg:px-12 flex flex-col">
       <div className="mx-auto max-w-7xl w-full flex-grow flex flex-col">
@@ -756,7 +655,7 @@ function HomePage() {
           <Header />
 
           {/* Shuffle Arena — TOP of page, only visible while shuffling */}
-          {(showArena || eventRolling) && (
+          {showArena && (
             <section
               ref={arenaRef}
               className="mt-8 hextech-frame border-gold/60 bg-background/80 p-4 sm:p-6 scroll-mt-8 animate-fade-in relative"
@@ -769,22 +668,13 @@ function HomePage() {
                 ✕ Stop
               </button>
               <h2 className="font-display text-center text-sm uppercase tracking-[0.4em] text-gold">
-                {eventRolling
-                  ? `Round ${rounds.findIndex((r) => r.id === eventRolling.roundId) + 1} · Ông trời kêu vậy`
-                  : activeRound && activeLane
-                    ? `Round ${rounds.findIndex((r) => r.id === activeRound.id) + 1} · Lane ${activeLaneIdx + 1} / ${activeRound.lanes.length}`
-                    : "Shuffle Arena"}
+                {activeRound && activeLane
+                  ? `Round ${rounds.findIndex((r) => r.id === activeRound.id) + 1} · Lane ${activeLaneIdx + 1} / ${activeRound.lanes.length}`
+                  : "Shuffle Arena"}
               </h2>
               <div className="gold-divider my-3" />
               <div className="flex min-h-[360px] items-center justify-center">
-                {eventRolling ? (
-                  <EventRollPanel
-                    pool={eventRolling.pool}
-                    final={eventRolling.final}
-                    revealedIndex={eventRolling.revealedIndex}
-                    currentName={eventRolling.currentName}
-                  />
-                ) : activeLane && activeRound ? (
+                {activeLane && activeRound ? (
                   <div className="w-full max-w-3xl mx-auto">
                     <LaneRow
                       key={`${activeRound.id}-${activeLaneIdx}`}
@@ -1241,7 +1131,7 @@ function HomePage() {
                   )}
                 </div>
 
-                {/* 4. Ông trời kêu vậy toggle + event count + Skip animation toggle */}
+                {/* 4. Skip animation toggle */}
                 <div>
                   <label className="font-display text-xs uppercase tracking-[0.25em] text-muted-foreground">
                     Additional Options
@@ -1254,37 +1144,6 @@ function HomePage() {
                       onChange={setSkipAnimation}
                       disabled={inputsLocked}
                     />
-
-                    {/* Ông trời kêu vậy */}
-                    <ToggleRow
-                      label="Ông trời kêu vậy"
-                      hint="Roll random in-game events after each round."
-                      value={enableEvents}
-                      onChange={setEnableEvents}
-                      disabled={inputsLocked}
-                    />
-                    <div className={enableEvents ? "" : "opacity-50 pointer-events-none"}>
-                      <label className="font-display text-xs uppercase tracking-[0.25em] text-muted-foreground">
-                        Amount of events
-                      </label>
-                      <div className="mt-2 flex items-center gap-2">
-                        <input
-                          type="number"
-                          min={1}
-                          max={3}
-                          step={1}
-                          className="input-hex w-24"
-                          value={eventCount}
-                          disabled={!enableEvents || inputsLocked}
-                          onChange={(e) => {
-                            const v = Number(e.target.value);
-                            if (Number.isNaN(v)) return;
-                            setEventCount(Math.min(3, Math.max(1, Math.floor(v))));
-                          }}
-                        />
-                        <span className="text-xs italic text-muted-foreground">1–3</span>
-                      </div>
-                    </div>
                   </div>
                 </div>
 
@@ -1462,7 +1321,6 @@ function HomePage() {
                       <RoundView
                         roundNumber={idx + 1}
                         round={r}
-                        onReshuffle={startEventRoll}
                         onDelete={handleDeleteRound}
                         disabled={inputsLocked || isSelectMode}
                       />
@@ -1694,57 +1552,6 @@ function ScreenshotPreviewDialog({
             Save to Device
           </button>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function EventRollPanel({
-  pool,
-  final,
-  revealedIndex,
-  currentName,
-}: {
-  pool: GameEvent[];
-  final: GameEvent[];
-  revealedIndex: number;
-  currentName: string;
-}) {
-  void pool;
-  return (
-    <div className="w-full max-w-2xl mx-auto space-y-4">
-      <div className="hextech-frame px-4 py-6 text-center">
-        <div className="text-[10px] uppercase tracking-[0.4em] text-muted-foreground">
-          Sự kiện {Math.min(revealedIndex + 1, final.length)} / {final.length}
-        </div>
-        <div className="mt-2 font-display text-2xl uppercase tracking-widest text-gold-bright text-glow-gold animate-pulse">
-          {currentName}
-        </div>
-      </div>
-      {revealedIndex > 0 && (
-        <ul className="space-y-2">
-          {final.slice(0, revealedIndex).map((ev) => (
-            <li key={ev.id}>
-              <EventCard event={ev} />
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-function EventCard({ event }: { event: GameEvent }) {
-  return (
-    <div className="hextech-frame flex items-start gap-3 px-3 py-2 animate-fade-in">
-      <div className="shrink-0 w-24 text-center border border-gold/50 bg-gold/10 px-2 py-1 font-display text-[10px] uppercase tracking-[0.2em] text-gold-bright">
-        {formatEventTime(event.time)}
-      </div>
-      <div className="min-w-0">
-        <div className="font-display text-sm uppercase tracking-[0.18em] text-gold-bright">
-          {event.name}
-        </div>
-        <div className="mt-0.5 font-serif text-xs text-muted-foreground">{event.content}</div>
       </div>
     </div>
   );
@@ -2170,25 +1977,16 @@ function SummonerSelect({
 function RoundView({
   roundNumber,
   round,
-  onReshuffle,
   onDelete,
   disabled,
 }: {
   roundNumber: number;
   round: Round;
-  onReshuffle?: (roundId: number, count: number) => void;
   onDelete?: (roundId: number) => void;
   disabled?: boolean;
 }) {
   const visibleLanes = round.lanes.slice(0, round.revealed);
-  const [localEventCount, setLocalEventCount] = useState(round.events?.length || 1);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-
-  useEffect(() => {
-    if (round.events && round.events.length > 0) {
-      setLocalEventCount(round.events.length);
-    }
-  }, [round.events]);
 
   return (
     <div className="hextech-frame p-5">
@@ -2226,48 +2024,6 @@ function RoundView({
         )}
       </div>
       <div className="gold-divider my-4" />
-
-      {round.events && round.events.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <div className="flex items-center gap-4">
-            <div className="font-display text-[10px] uppercase tracking-[0.4em] text-gold">
-              Ông trời kêu vậy
-            </div>
-            {onReshuffle && (
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min={1}
-                  max={3}
-                  step={1}
-                  className="input-hex w-16 h-9 text-xs px-1 py-0"
-                  value={localEventCount}
-                  disabled={disabled}
-                  onChange={(e) => {
-                    const v = Number(e.target.value);
-                    if (!Number.isNaN(v)) setLocalEventCount(Math.max(1, Math.floor(v)));
-                  }}
-                />
-                <button
-                  type="button"
-                  className="btn-hex text-[10px] px-2 py-0.5"
-                  onClick={() => onReshuffle(round.id, localEventCount)}
-                  disabled={disabled}
-                >
-                  Re-shuffle events
-                </button>
-              </div>
-            )}
-          </div>
-          <ul className="space-y-2">
-            {round.events.map((ev) => (
-              <li key={ev.id}>
-                <EventCard event={ev} />
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       {visibleLanes.length === 0 ? (
         <div className="py-6 text-center text-xs italic uppercase tracking-[0.3em] text-muted-foreground">

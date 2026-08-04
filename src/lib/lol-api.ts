@@ -1,11 +1,14 @@
 // Data Dragon (official Riot static data) — fetched client-side, no key required.
 // Docs: https://developer.riotgames.com/docs/lol#data-dragon
 
+import type { ChampionTag } from "./constants";
+
 export type Champion = {
   id: string; // "Aatrox"
   key: string; // "266"
   name: string; // "Aatrox"
   title: string;
+  tags: ChampionTag[]; // ["Fighter", "Tank"]
   squareUrl: string; // 120x120 portrait
   splashUrl: string; // loading splash
 };
@@ -63,20 +66,26 @@ export async function getAllChampions(): Promise<Champion[]> {
     `https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/champion.json`,
   );
   const data = await res.json();
+  // Strip to only the fields we need — avoids holding blurb/stats/partype/sprite in memory.
+  // Also filter out "Jade_*" entries (legacy rework variants, not standard champions).
   const champs: Champion[] = Object.values<{
     id: string;
     key: string;
     name: string;
     title: string;
+    tags: string[];
     image: { full: string };
-  }>(data.data).map((c) => ({
-    id: c.id,
-    key: c.key,
-    name: c.name,
-    title: c.title,
-    squareUrl: `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${c.image.full}`,
-    splashUrl: `https://ddragon.leagueoflegends.com/cdn/img/champion/loading/${c.id}_0.jpg`,
-  }));
+  }>(data.data)
+    .filter((c) => !c.id.startsWith("Jade_"))
+    .map((c) => ({
+      id: c.id,
+      key: c.key,
+      name: c.name,
+      title: c.title,
+      tags: c.tags as ChampionTag[],
+      squareUrl: `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${c.image.full}`,
+      splashUrl: `https://ddragon.leagueoflegends.com/cdn/img/champion/loading/${c.id}_0.jpg`,
+    }));
   champs.sort((a, b) => a.name.localeCompare(b.name));
   cachedChampions = champs;
   return champs;
