@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as V2RouteImport } from './routes/v2'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RandomLaneRouteImport } from './routes/random-lane'
 import { Route as HuongDanRouteImport } from './routes/huong-dan'
@@ -19,7 +20,13 @@ import { Route as CmvnRouteImport } from './routes/cmvn'
 import { Route as ChiaTeamLienMinhRouteImport } from './routes/chia-team-lien-minh'
 import { Route as AramRandomRouteImport } from './routes/aram-random'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as V2RandomRouteImport } from './routes/v2.random'
 
+const V2Route = V2RouteImport.update({
+  id: '/v2',
+  path: '/v2',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -70,6 +77,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const V2RandomRoute = V2RandomRouteImport.update({
+  id: '/random',
+  path: '/random',
+  getParentRoute: () => V2Route,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +94,8 @@ export interface FileRoutesByFullPath {
   '/huong-dan': typeof HuongDanRoute
   '/random-lane': typeof RandomLaneRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/v2': typeof V2RouteWithChildren
+  '/v2/random': typeof V2RandomRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +108,8 @@ export interface FileRoutesByTo {
   '/huong-dan': typeof HuongDanRoute
   '/random-lane': typeof RandomLaneRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/v2': typeof V2RouteWithChildren
+  '/v2/random': typeof V2RandomRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +123,8 @@ export interface FileRoutesById {
   '/huong-dan': typeof HuongDanRoute
   '/random-lane': typeof RandomLaneRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/v2': typeof V2RouteWithChildren
+  '/v2/random': typeof V2RandomRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +139,8 @@ export interface FileRouteTypes {
     | '/huong-dan'
     | '/random-lane'
     | '/sitemap.xml'
+    | '/v2'
+    | '/v2/random'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +153,8 @@ export interface FileRouteTypes {
     | '/huong-dan'
     | '/random-lane'
     | '/sitemap.xml'
+    | '/v2'
+    | '/v2/random'
   id:
     | '__root__'
     | '/'
@@ -145,6 +167,8 @@ export interface FileRouteTypes {
     | '/huong-dan'
     | '/random-lane'
     | '/sitemap.xml'
+    | '/v2'
+    | '/v2/random'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,10 +182,18 @@ export interface RootRouteChildren {
   HuongDanRoute: typeof HuongDanRoute
   RandomLaneRoute: typeof RandomLaneRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  V2Route: typeof V2RouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/v2': {
+      id: '/v2'
+      path: '/v2'
+      fullPath: '/v2'
+      preLoaderRoute: typeof V2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -232,8 +264,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/v2/random': {
+      id: '/v2/random'
+      path: '/random'
+      fullPath: '/v2/random'
+      preLoaderRoute: typeof V2RandomRouteImport
+      parentRoute: typeof V2Route
+    }
   }
 }
+
+interface V2RouteChildren {
+  V2RandomRoute: typeof V2RandomRoute
+}
+
+const V2RouteChildren: V2RouteChildren = {
+  V2RandomRoute: V2RandomRoute,
+}
+
+const V2RouteWithChildren = V2Route._addFileChildren(V2RouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -246,6 +295,7 @@ const rootRouteChildren: RootRouteChildren = {
   HuongDanRoute: HuongDanRoute,
   RandomLaneRoute: RandomLaneRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  V2Route: V2RouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
