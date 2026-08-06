@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
+import { usePageTracking } from "@/hooks/usePageTracking";
 
 function NotFoundComponent() {
   return (
@@ -89,6 +90,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "alternate", hrefLang: "x-default", href: "https://random-team-lol.lovable.app/" },
     ],
     scripts: [
+      // ── Google Analytics 4 ──────────────────────────────────────────────
+      {
+        src: "https://www.googletagmanager.com/gtag/js?id=G-RCE35Y29CN",
+        async: true,
+      },
+      {
+        children: `
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-RCE35Y29CN', {
+  page_path: window.location.pathname,
+  send_page_view: true
+});
+`.trim(),
+      },
+      // ── Site-wide JSON-LD ───────────────────────────────────────────────
       {
         type: "application/ld+json",
         children: JSON.stringify({
@@ -135,6 +153,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  usePageTracking();
 
   return (
     <QueryClientProvider client={queryClient}>

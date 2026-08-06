@@ -20,7 +20,7 @@ import { Route as CmvnRouteImport } from './routes/cmvn'
 import { Route as ChiaTeamLienMinhRouteImport } from './routes/chia-team-lien-minh'
 import { Route as AramRandomRouteImport } from './routes/aram-random'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as V2RandomRouteImport } from './routes/v2.random'
+import { Route as V2RandomRouteImport } from './routes/v2/random'
 
 const V2Route = V2RouteImport.update({
   id: '/v2',
