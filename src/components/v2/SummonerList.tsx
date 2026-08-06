@@ -9,7 +9,7 @@ import {
 import {
   SortableContext,
   useSortable,
-  verticalListSortingStrategy,
+  rectSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -18,6 +18,7 @@ import { SummonerItem } from "@/components/v2/SummonerItem";
 import { type Summoner } from "@/hooks/useV2Store";
 
 const MAX_SUMMONERS = 10;
+const TOTAL_SLOTS = 10;
 
 type SummonerListProps = {
   summoners: Summoner[];
@@ -26,20 +27,21 @@ type SummonerListProps = {
   onRemove?: (id: string) => void;
   onReorder?: (orderedIds: string[]) => void;
   onPowerChange?: (id: string, power: number) => void;
+  onRename?: (id: string, name: string) => void;
 };
 
 const SortableSummonerItem = ({
   summoner,
-  index,
   showPowerInput,
   onRemove,
   onPowerChange,
+  onRename,
 }: {
   summoner: Summoner;
-  index: number;
   showPowerInput?: boolean;
   onRemove?: () => void;
   onPowerChange?: (power: number) => void;
+  onRename?: (name: string) => void;
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: summoner.id,
@@ -55,11 +57,11 @@ const SortableSummonerItem = ({
     <div ref={setNodeRef} style={style}>
       <SummonerItem
         name={summoner.name}
-        index={index}
         showPowerInput={showPowerInput}
         power={summoner.power}
         onPowerChange={onPowerChange}
         onRemove={onRemove}
+        onRename={onRename}
         dragHandleProps={{ ...attributes, ...listeners }}
         isDragging={isDragging}
       />
@@ -74,67 +76,63 @@ export const SummonerList = ({
   onRemove,
   onReorder,
   onPowerChange,
+  onRename,
 }: SummonerListProps) => {
   const sensors = useSensors(useSensor(PointerSensor));
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-
-    const oldIndex = summoners.findIndex((summoner) => summoner.id === active.id);
-    const newIndex = summoners.findIndex((summoner) => summoner.id === over.id);
+    const oldIndex = summoners.findIndex((s) => s.id === active.id);
+    const newIndex = summoners.findIndex((s) => s.id === over.id);
     const reordered = arrayMove(summoners, oldIndex, newIndex);
-    onReorder?.(reordered.map((summoner) => summoner.id));
+    onReorder?.(reordered.map((s) => s.id));
   };
 
-  const emptySlots = Array.from({
-    length: Math.max(0, MAX_SUMMONERS - summoners.length),
-  });
+  // Pad to TOTAL_SLOTS with empty entries
+  const emptyCount = Math.max(0, TOTAL_SLOTS - summoners.length);
+  const emptyKeys = Array.from({ length: emptyCount }, (_, index) => `empty-${index}`);
 
-  const listContent = (
-    <div className="space-y-1">
-      {summoners.map((summoner, index) =>
+  const grid = (
+    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+      {summoners.map((summoner) =>
         draggable ? (
           <SortableSummonerItem
             key={summoner.id}
             summoner={summoner}
-            index={index}
             showPowerInput={showPowerInput}
             onRemove={onRemove ? () => onRemove(summoner.id) : undefined}
-            onPowerChange={
-              onPowerChange ? (power) => onPowerChange(summoner.id, power) : undefined
-            }
+            onPowerChange={onPowerChange ? (power) => onPowerChange(summoner.id, power) : undefined}
+            onRename={onRename ? (name) => onRename(summoner.id, name) : undefined}
           />
         ) : (
           <SummonerItem
             key={summoner.id}
             name={summoner.name}
-            index={index}
             showPowerInput={showPowerInput}
             power={summoner.power}
             onRemove={onRemove ? () => onRemove(summoner.id) : undefined}
-            onPowerChange={
-              onPowerChange ? (power) => onPowerChange(summoner.id, power) : undefined
-            }
+            onPowerChange={onPowerChange ? (power) => onPowerChange(summoner.id, power) : undefined}
+            onRename={onRename ? (name) => onRename(summoner.id, name) : undefined}
           />
         ),
       )}
 
-      {emptySlots.map((_, index) => (
-        <SummonerItem key={`empty-${index}`} index={summoners.length + index} />
+      {emptyKeys.map((key) => (
+        <SummonerItem key={key} />
       ))}
     </div>
   );
 
-  if (!draggable) return listContent;
+  if (!draggable) return grid;
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext
-        items={summoners.map((summoner) => summoner.id)}
-        strategy={verticalListSortingStrategy}
+        items={summoners.map((s) => s.id)}
+        strategy={rectSortingStrategy}
       >
-        {listContent}
+        {grid}
       </SortableContext>
     </DndContext>
   );

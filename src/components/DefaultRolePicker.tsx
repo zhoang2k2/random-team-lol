@@ -68,7 +68,7 @@ export function DefaultRolePicker({
         <button
           type="button"
           onClick={handleClear}
-          className="text-[10px] text-muted-foreground hover:text-gold-bright transition-colors uppercase tracking-wider font-display cursor-pointer"
+          className="text-[10px] text-red-400 text-muted-foreground hover:text-gold-bright transition-colors uppercase tracking-wider font-display cursor-pointer"
           disabled={disabled}
         >
           Clear
@@ -79,8 +79,8 @@ export function DefaultRolePicker({
         {/* Header row */}
         <div className="grid grid-cols-[50px_1fr_1fr] gap-2 items-center text-center font-display text-[10px] uppercase tracking-wider text-muted-foreground border-b border-gold/15 pb-2">
           <div>Role</div>
-          <div>Người chơi 1</div>
-          <div>Người chơi 2</div>
+          <div>Player 1</div>
+          <div>Player 2</div>
         </div>
 
         {ROLES_ORDER.map((role) => {

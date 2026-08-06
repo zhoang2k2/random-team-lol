@@ -11,16 +11,20 @@ import {
 import { buildLanePairings, type ExclusionPair } from "@/lib/randomize";
 import { LaneRow } from "@/components/LaneRow";
 import { InternalNav } from "@/components/InternalNav";
+import { SiteHeader } from "@/components/v2/V2Header";
+import { analytics } from "@/lib/analytics";
 import { DndContext, type DragEndEvent } from "@dnd-kit/core";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 
-const HOME_TITLE = "Random Team LOL — Chia Team Liên Minh Huyền Thoại Online | Nghiện LOL";
+const HOME_TITLE = "Random Team LOL – Shuffle Players for League of Legends";
 const HOME_DESC =
-  "Công cụ random team Liên Minh Huyền Thoại miễn phí: chia đội Alpha/Beta, random lane, random tướng cho custom game, ARAM, đấu nội bộ. Nhanh, cân bằng, không cần đăng nhập.";
+  "Generate random teams for League of Legends custom games. Add players, shuffle teams, and start playing in seconds.";
 const HOME_URL = "https://random-team-lol.lovable.app/";
 const HOME_OG_IMAGE =
   "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9f46e38b-7f65-4499-90d0-f533ae0b30bd/id-preview-59dea75c--798fb065-8b64-41bc-a26e-91489f067067.lovable.app-1778658824543.png";
+const HOME_KEYWORDS =
+  "Random LOL, League of Legends, random teams, custom games, shuffle players, chia team LMHT, random tướng";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -28,11 +32,13 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: HOME_TITLE },
       { name: "description", content: HOME_DESC },
+      { name: "keywords", content: HOME_KEYWORDS },
       { property: "og:title", content: HOME_TITLE },
       { property: "og:description", content: HOME_DESC },
       { property: "og:type", content: "website" },
       { property: "og:url", content: HOME_URL },
       { property: "og:image", content: HOME_OG_IMAGE },
+      { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: HOME_TITLE },
       { name: "twitter:description", content: HOME_DESC },
       { name: "twitter:image", content: HOME_OG_IMAGE },
@@ -53,13 +59,13 @@ export const Route = createFileRoute("/")({
           description: HOME_DESC,
           offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
           featureList: [
-            "Random chia team Alpha/Beta cân bằng",
-            "Random lane (Top, Jungle, Mid, ADC, Support)",
-            "Random tướng từ pool 160+ champion LMHT",
-            "Hỗ trợ ARAM mode",
-            "Loại trừ cặp người chơi (exclusion pairs)",
-            "Sự kiện ngẫu nhiên trong trận (special events)",
-            "Lưu lịch sử shuffle local",
+            "Random teams for League of Legends custom games",
+            "Shuffle Alpha/Beta teams with balanced assignments",
+            "Random lane assignment (Top, Jungle, Mid, ADC, Support)",
+            "Random champion picks from 160+ champion pool",
+            "ARAM mode support",
+            "Exclusion pairs — keep players on opposite teams",
+            "Local history saved automatically",
           ],
         }),
       },
@@ -490,6 +496,12 @@ function HomePage() {
     };
     setRounds((prev) => [...prev, newRound]);
     setShowSummoners(false);
+
+    analytics.shuffleTeam({
+      version: "v1",
+      member_count: members.length,
+      skip_animation: skipAnimation,
+    });
 
     if (!skipAnimation) {
       setShuffling(true);

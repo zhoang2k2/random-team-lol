@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { analytics } from "@/lib/analytics";
 import type { DefaultRoleConfig } from "@/components/DefaultRolePicker";
 import { EMPTY_DEFAULT_ROLES } from "@/components/DefaultRolePicker";
 import type { ExclusionPair } from "@/lib/randomize";
@@ -62,6 +63,7 @@ export const useV2Store = () => {
           summoners: [...prev.summoners, { id: crypto.randomUUID(), name: trimmed, power: 1 }],
         };
       });
+      analytics.summonerAdd({ version: "v2", total: state.summoners.length + 1 });
     },
     [setState],
   );
@@ -79,6 +81,7 @@ export const useV2Store = () => {
           settings: { ...prev.settings, exclusion: nextExclusion },
         };
       });
+      analytics.summonerRemove({ version: "v2", total: Math.max(0, state.summoners.length - 1) });
     },
     [setState],
   );
@@ -103,6 +106,35 @@ export const useV2Store = () => {
         ...prev,
         summoners: prev.summoners.map((s) => (s.id === id ? { ...s, power } : s)),
       }));
+    },
+    [setState],
+  );
+
+  const renameSummoner = useCallback(
+    (id: string, name: string) => {
+      const trimmed = name.trim();
+      if (!trimmed) return;
+      setState((prev) => {
+        if (prev.summoners.some((s) => s.name === trimmed && s.id !== id)) return prev;
+        return {
+          ...prev,
+          summoners: prev.summoners.map((s) => (s.id === id ? { ...s, name: trimmed } : s)),
+          settings: {
+            ...prev.settings,
+            exclusion: prev.settings.exclusion
+              ? {
+                  a: prev.summoners.find((s) => s.id === id)?.name === prev.settings.exclusion.a
+                    ? trimmed
+                    : prev.settings.exclusion.a,
+                  b: prev.summoners.find((s) => s.id === id)?.name === prev.settings.exclusion.b
+                    ? trimmed
+                    : prev.settings.exclusion.b,
+                }
+              : null,
+          },
+        };
+      });
+      analytics.summonerRename({ version: "v2" });
     },
     [setState],
   );
@@ -150,6 +182,7 @@ export const useV2Store = () => {
     removeSummoner,
     reorderSummoners,
     updatePower,
+    renameSummoner,
     updateSettings,
     setResults,
     clearResults,

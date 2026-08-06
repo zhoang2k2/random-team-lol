@@ -2,10 +2,12 @@ import { cn } from "@/lib/utils";
 
 type PrimaryButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "default" | "danger";
+  size?: "sm" | "md" | "lg";
 };
 
 export const PrimaryButton = ({
   variant = "default",
+  size = "md",
   className,
   children,
   ...props
@@ -14,9 +16,12 @@ export const PrimaryButton = ({
     <button
       type="button"
       className={cn(
-        "btn-hex font-display uppercase tracking-widest text-sm px-4 h-10 cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed",
-        variant === "primary" && "btn-hex-primary shadow-[0_0_15px_rgba(255,215,0,0.1)] hover:shadow-[0_0_25px_rgba(255,215,0,0.35)]",
-        variant === "danger" && "border-destructive/50 text-destructive hover:bg-destructive/10",
+        "btn-hex cursor-pointer",
+        variant === "primary" && "btn-hex-primary",
+        variant === "danger" && "btn-hex-danger",
+        size === "sm" && "text-[10px] px-3 py-1",
+        size === "md" && "text-xs px-4 py-2",
+        size === "lg" && "text-sm px-5 py-3",
         className,
       )}
       {...props}
