@@ -664,7 +664,21 @@ function HomePage() {
     <div className="min-h-screen px-4 py-8 md:px-8 lg:px-12 flex flex-col">
       <div className="mx-auto max-w-7xl w-full flex-grow flex flex-col">
         <div className="flex-grow">
-          <Header />
+          <SiteHeader
+            currentPath="/"
+            pageHeading={
+              <>
+                <p className="font-display text-xs uppercase tracking-[0.5em] text-gold">CMDN</p>
+                <h1 className="mt-2 font-display text-4xl font-bold uppercase tracking-[0.2em] text-gold-bright text-glow-gold md:text-5xl">
+                  Xóm Nghẹo
+                </h1>
+                <div className="gold-divider mx-auto mt-3 max-w-md" />
+                <p className="mt-3 font-serif text-sm italic text-muted-foreground">
+                  Vĩ nhân nào không có 1 quá khứ, Kẻ nghiện nào chẳng còn 1 tương lai
+                </p>
+              </>
+            }
+          />
 
           {/* Shuffle Arena — TOP of page, only visible while shuffling */}
           {showArena && (
@@ -1739,21 +1753,6 @@ function ResultsSkeleton() {
         ))}
       </div>
     </div>
-  );
-}
-
-function Header() {
-  return (
-    <header className="text-center">
-      <p className="font-display text-xs uppercase tracking-[0.5em] text-gold">CMDN</p>
-      <h1 className="mt-2 font-display text-4xl font-bold uppercase tracking-[0.2em] text-gold-bright text-glow-gold md:text-5xl">
-        Xóm Nghẹo
-      </h1>
-      <div className="gold-divider mx-auto mt-3 max-w-md" />
-      <p className="mt-3 font-serif text-sm italic text-muted-foreground">
-        Vĩ nhân nào không có 1 quá khứ, Kẻ nghiện nào chẳng còn 1 tương lai
-      </p>
-    </header>
   );
 }
 
