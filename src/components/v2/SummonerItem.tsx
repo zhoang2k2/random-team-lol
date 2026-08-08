@@ -180,12 +180,12 @@ export const SummonerItem = ({
           <NumberInput
             value={power}
             min={0}
-            max={100}
-            step={0.5}
+            max={1000}
+            step={1}
             onChange={(event) => {
               const parsed = parseFloat(event.target.value);
               if (!Number.isNaN(parsed)) {
-                const clamped = Math.min(10, Math.max(0.5, parsed));
+                const clamped = Math.min(1000, Math.max(0, parsed));
                 onPowerChange?.(clamped);
               }
             }}

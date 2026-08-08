@@ -74,7 +74,7 @@ const V2RandomPage = () => {
 
   const engine = useShuffleEngine({
     members,
-    randomMembers: settings.shuffleTeam,
+    randomMembers: settings.evaluatePower ? true : settings.shuffleTeam,
     exclusions: settings.exclusion ? [settings.exclusion] : [],
     defaultRoles: settings.defaultRoles,
     skipAnimation: settings.skipAnimation,
@@ -264,10 +264,10 @@ const V2RandomPage = () => {
                 <div className="p-4 space-y-2 border-r border-gold/10">
                   <ToggleRow
                     label="Shuffle team"
-                    hint="Xáo trộn ngẫu nhiên"
-                    value={settings.shuffleTeam}
+                    hint={settings.evaluatePower ? "Bắt buộc khi Evaluate Power" : "Xáo trộn ngẫu nhiên"}
+                    value={settings.evaluatePower ? true : settings.shuffleTeam}
                     onChange={(value) => updateSettings({ shuffleTeam: value })}
-                    disabled={engine.shuffling}
+                    disabled={engine.shuffling || settings.evaluatePower}
                   />
                   <ToggleRow
                     label="Skip animation"
@@ -289,7 +289,13 @@ const V2RandomPage = () => {
                     label="Evaluate Power"
                     hint="Chấm điểm summoner"
                     value={settings.evaluatePower}
-                    onChange={(value) => updateSettings({ evaluatePower: value })}
+                    onChange={(value) => {
+                      updateSettings({
+                        evaluatePower: value,
+                        // force shuffleTeam on when evaluate power is enabled
+                        ...(value ? { shuffleTeam: true } : {}),
+                      });
+                    }}
                     disabled={engine.shuffling}
                   />
                   <div className="pt-2">
