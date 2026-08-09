@@ -44,25 +44,30 @@ export function ScreenshotChooserDialog({
 }
 
 export function ScreenshotPreviewDialog({
+  isOpen,
   dataUrl,
   onSave,
   onDiscard,
+  onClose,
 }: {
+  isOpen?: boolean;
   dataUrl: string | null;
   onSave: () => void;
-  onDiscard: () => void;
+  onDiscard?: () => void;
+  onClose?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
 
-  if (!dataUrl) return null;
+  const isVisible = (isOpen === undefined ? Boolean(dataUrl) : isOpen) && Boolean(dataUrl);
+  if (!isVisible || !dataUrl) return null;
+
+  const handleClose = onDiscard || onClose || (() => {});
 
   const handleCopy = async () => {
     try {
       const response = await fetch(dataUrl);
       const blob = await response.blob();
-      await navigator.clipboard.write([
-        new ClipboardItem({ [blob.type]: blob }),
-      ]);
+      await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -75,9 +80,7 @@ export function ScreenshotPreviewDialog({
     try {
       const response = await fetch(dataUrl);
       const blob = await response.blob();
-      await navigator.clipboard.write([
-        new ClipboardItem({ [blob.type]: blob }),
-      ]);
+      await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
     } catch {
       // ignore clipboard error during download
     }
@@ -85,37 +88,60 @@ export function ScreenshotPreviewDialog({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-      <div className="hextech-frame p-5 max-w-xl w-full mx-auto space-y-4 animate-fade-in">
-        <h3 className="font-display text-gold-bright uppercase tracking-widest text-sm">
-          Save Screenshot?
-        </h3>
-        <div className="border border-gold/30 overflow-hidden max-h-[60vh] overflow-y-auto">
-          <img src={dataUrl} alt="Screenshot preview" className="w-full h-auto" />
-        </div>
-        <div className="flex flex-wrap gap-2 justify-end">
+    <div
+      className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+      onClick={handleClose}
+    >
+      <div
+        className="hextech-frame p-5 max-w-2xl w-full mx-auto space-y-4 animate-fade-in bg-card/95 border border-gold/40 shadow-2xl rounded-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-gold/20 pb-2">
+          <h3 className="font-display text-gold-bright uppercase tracking-widest text-sm font-bold">
+            Xem Trước Ảnh Chụp
+          </h3>
           <button
             type="button"
-            className="btn-hex text-xs px-4 py-1.5 border-destructive/50 text-destructive cursor-pointer"
-            onClick={onDiscard}
+            onClick={handleClose}
+            className="text-muted-foreground hover:text-gold-bright text-xs font-display px-2 py-0.5 rounded hover:bg-gold/10 transition-colors cursor-pointer"
           >
-            Discard
+            ✕ Đóng
+          </button>
+        </div>
+
+        <div className="border border-gold/30 rounded overflow-hidden max-h-[65vh] overflow-y-auto bg-black/40 p-2">
+          <img
+            src={dataUrl}
+            alt="Screenshot preview"
+            className="w-full h-auto rounded object-contain mx-auto"
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-2 justify-end pt-1">
+          <button
+            type="button"
+            className="btn-hex text-xs px-4 py-2 border-destructive/50 text-destructive hover:bg-destructive/10 cursor-pointer rounded transition-colors"
+            onClick={handleClose}
+          >
+            Hủy Bỏ
           </button>
           <button
             type="button"
-            className={`btn-hex text-xs px-4 py-1.5 cursor-pointer transition-all ${
-              copied ? "border-green-500 text-green-400" : ""
+            className={`btn-hex text-xs px-4 py-2 cursor-pointer transition-all rounded ${
+              copied
+                ? "border-green-500 text-green-400 bg-green-950/30"
+                : "border-gold/40 text-gold-bright hover:bg-gold/10"
             }`}
             onClick={handleCopy}
           >
-            {copied ? "Copied! ✓" : "Copy to Clipboard"}
+            {copied ? "Đã Sao Chép! ✓" : "Sao Chép Vào Khay Nhớ Tạm"}
           </button>
           <button
             type="button"
-            className="btn-hex btn-hex-primary text-xs px-4 py-1.5 cursor-pointer"
+            className="btn-hex btn-hex-primary text-xs px-4 py-2 cursor-pointer rounded font-bold"
             onClick={handleSaveAndCopy}
           >
-            Save to Device
+            Tải Ảnh Về Máy
           </button>
         </div>
       </div>

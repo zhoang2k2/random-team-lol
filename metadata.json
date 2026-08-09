@@ -1,0 +1,6 @@
+{
+  "name": "Random Team League of Legends",
+  "description": "Chia đội ngẫu nhiên, random lane, random tướng và cân bằng sức mạnh cho Liên Minh Huyền Thoại",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
