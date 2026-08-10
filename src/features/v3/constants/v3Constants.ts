@@ -19,6 +19,7 @@ export const V3_DEFAULT_PERSISTED_STATE: V3PersistedState = {
   settings: V3_DEFAULT_SETTINGS,
   laneResults: [],
   matchResults: [],
+  recentHistorySignatures: [],
 };
 
 export const V3_INITIAL_SAMPLE_SUMMONERS = [

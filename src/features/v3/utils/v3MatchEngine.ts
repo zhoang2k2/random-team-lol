@@ -13,6 +13,7 @@ import { buildLanePairings } from "@/lib/randomize";
 export type CreateMatchOutcome = {
   matchResult: V3MatchResult;
   updatedActiveSummoners?: V3Summoner[];
+  partitionSignature?: string;
 };
 
 function getRandomChampion(pool: Champion[]): Champion | null {
@@ -25,6 +26,7 @@ export function createV3MatchResult(
   summonerList: V3Summoner[],
   settings: V3Settings,
   championPool: Champion[],
+  recentHistorySignatures: string[] = [],
 ): CreateMatchOutcome | null {
   const activeSummoners = summonerList.slice(0, 10);
   if (activeSummoners.length === 0) {
@@ -33,6 +35,7 @@ export function createV3MatchResult(
 
   let lanePlayerNames: { role: Role; blueName: string | null; redName: string | null }[] = [];
   let updatedActiveSummoners: V3Summoner[] | undefined = undefined;
+  let partitionSignature: string | undefined = undefined;
 
   if (settings.isShuffleTeamEnabled) {
     if (settings.isEvaluatePowerEnabled) {
@@ -41,10 +44,12 @@ export function createV3MatchResult(
         activeSummoners,
         settings.defaultRoles,
         settings.neverSameTeam,
+        { recentHistorySignatures },
       );
 
       if (balanced) {
         updatedActiveSummoners = balanced.interleavedSummoners;
+        partitionSignature = balanced.signature;
         lanePlayerNames = balanced.lanePairings.map((pairing) => ({
           role: pairing.roleName as Role,
           blueName: pairing.teamOneSummonerName,
@@ -156,5 +161,6 @@ export function createV3MatchResult(
   return {
     matchResult,
     updatedActiveSummoners,
+    partitionSignature,
   };
 }

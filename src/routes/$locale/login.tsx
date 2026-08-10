@@ -38,7 +38,9 @@ export function LocaleLoginPage() {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN") {
         analytics.login({ method: "google" });
-        navigate({ to: "/random-lol" });
+        const targetLocale = locale === "en" ? "en" : "vi";
+        window.location.href = `${window.location.origin}/${targetLocale}/random-lol`;
+        return;
       }
       setUser(session?.user ?? null);
       setLoading(false);

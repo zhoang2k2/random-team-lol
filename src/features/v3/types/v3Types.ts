@@ -50,4 +50,5 @@ export type V3PersistedState = {
   settings: V3Settings;
   laneResults: V3TeamLaneResult[];
   matchResults: V3MatchResult[];
+  recentHistorySignatures?: string[];
 };

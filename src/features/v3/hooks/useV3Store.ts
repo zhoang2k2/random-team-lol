@@ -47,6 +47,7 @@ export const useV3Store = () => {
   const [pendingOutcome, setPendingOutcome] = useState<{
     matchResult: V3MatchResult;
     updatedActiveSummoners?: V3Summoner[];
+    partitionSignature?: string;
   } | null>(null);
   const [animatingLaneIdx, setAnimatingLaneIdx] = useState<number>(-1);
 
@@ -296,16 +297,26 @@ export const useV3Store = () => {
 
   // Primary Shuffle Team & Match creation execution logic
   const commitMatchOutcome = useCallback(
-    (outcome: { matchResult: V3MatchResult; updatedActiveSummoners?: V3Summoner[] }) => {
+    (outcome: {
+      matchResult: V3MatchResult;
+      updatedActiveSummoners?: V3Summoner[];
+      partitionSignature?: string;
+    }) => {
       setPersistedState((previousState) => {
         if (isLoggedIn && user?.id) {
           addV3MatchResultToSupabase(user.id, outcome.matchResult).catch((err) =>
             console.error("Error adding match result to Supabase:", err),
           );
         }
+        const history = previousState.recentHistorySignatures || [];
+        const updatedHistory = outcome.partitionSignature
+          ? [...history, outcome.partitionSignature].slice(-3)
+          : history;
+
         return {
           ...previousState,
           matchResults: [...previousState.matchResults, outcome.matchResult],
+          recentHistorySignatures: updatedHistory,
         };
       });
     },
@@ -319,6 +330,7 @@ export const useV3Store = () => {
       persistedState.summonerList,
       persistedState.settings,
       championPool,
+      persistedState.recentHistorySignatures || [],
     );
 
     if (!outcome) return;
@@ -338,7 +350,13 @@ export const useV3Store = () => {
       setPendingOutcome(outcome);
       setAnimatingLaneIdx(firstActiveLaneIndex);
     }
-  }, [persistedState.summonerList, persistedState.settings, championPool, commitMatchOutcome]);
+  }, [
+    persistedState.summonerList,
+    persistedState.settings,
+    persistedState.recentHistorySignatures,
+    championPool,
+    commitMatchOutcome,
+  ]);
 
   const handleLaneComplete = useCallback(() => {
     if (!pendingOutcome) return;
@@ -428,10 +446,13 @@ export const useV3Store = () => {
             activeSummoners,
             nextSettings.defaultRoles,
             nextSettings.neverSameTeam,
+            { recentHistorySignatures: previousState.recentHistorySignatures || [] },
           );
 
           if (balancedResult) {
             const nextSummonerList = [...balancedResult.interleavedSummoners, ...inactiveSummoners];
+            const history = previousState.recentHistorySignatures || [];
+            const updatedHistory = [...history, balancedResult.signature].slice(-3);
 
             if (isLoggedIn && user?.id) {
               syncV3SummonersOrderToSupabase(user.id, nextSummonerList).catch((err) =>
@@ -444,6 +465,7 @@ export const useV3Store = () => {
               settings: nextSettings,
               summonerList: nextSummonerList,
               laneResults: balancedResult.lanePairings,
+              recentHistorySignatures: updatedHistory,
             };
           }
         }
