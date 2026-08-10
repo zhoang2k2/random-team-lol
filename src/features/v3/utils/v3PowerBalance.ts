@@ -3,6 +3,13 @@ import type { ExclusionPair } from "@/lib/randomize";
 import { ROLES_ORDER } from "@/lib/lol-api";
 import type { V3Summoner, V3TeamLaneResult } from "@/features/v3/types/v3Types";
 
+export type V3PowerBalancedOptions = {
+  /** Soft tolerance window relative to minDiff (default: 2) */
+  tolerance?: number;
+  /** Signatures of recently generated team partitions (max 2-3) to avoid repeating */
+  recentHistorySignatures?: string[];
+};
+
 export type V3PowerBalancedResult = {
   team1: V3Summoner[];
   team2: V3Summoner[];
@@ -12,7 +19,24 @@ export type V3PowerBalancedResult = {
   powerDiff: number;
   top2Separated: boolean;
   lanePairings: V3TeamLaneResult[];
+  signature: string;
 };
+
+/**
+ * Creates a canonical partition signature for 2 teams.
+ * Independent of Team 1 vs Team 2 designation (order-insensitive).
+ */
+export function getPartitionSignature(team1: V3Summoner[], team2: V3Summoner[]): string {
+  const team1Sig = team1
+    .map((summoner) => summoner.id)
+    .sort()
+    .join(",");
+  const team2Sig = team2
+    .map((summoner) => summoner.id)
+    .sort()
+    .join(",");
+  return [team1Sig, team2Sig].sort().join("::");
+}
 
 /**
  * Generates all subset combinations of size k from array indices 0..n-1
@@ -25,9 +49,9 @@ function generateCombinations(n: number, k: number): number[][] {
       result.push([...current]);
       return;
     }
-    for (let i = start; i <= n - (k - current.length); i++) {
-      current.push(i);
-      helper(i + 1, current);
+    for (let index = start; index <= n - (k - current.length); index++) {
+      current.push(index);
+      helper(index + 1, current);
       current.pop();
     }
   }
@@ -37,21 +61,56 @@ function generateCombinations(n: number, k: number): number[][] {
 }
 
 /**
- * Calculates power-balanced team assignments for V3.
+ * Performs weighted random selection over a pool of partition candidates.
+ * Weight for each candidate = 1 / (powerDiff + 1).
+ */
+function selectWeightedRandomCandidate<T extends { powerDiff: number }>(
+  candidates: T[],
+): T {
+  if (candidates.length === 1) {
+    return candidates[0];
+  }
+
+  const weights = candidates.map((candidate) => 1 / (candidate.powerDiff + 1));
+  const totalWeight = weights.reduce((accumulated, weight) => accumulated + weight, 0);
+
+  let randomPoint = Math.random() * totalWeight;
+
+  for (let index = 0; index < candidates.length; index++) {
+    const weight = weights[index];
+    if (randomPoint < weight) {
+      return candidates[index];
+    }
+    randomPoint -= weight;
+  }
+
+  return candidates[candidates.length - 1];
+}
+
+/**
+ * Calculates power-balanced team assignments for V3 with dynamic & fair randomization.
  *
- * Rules:
- * 1. Default Role & Never On Same Team constraints MUST be satisfied first.
- * 2. Top 2 highest power summoners should NOT be on the same team if possible.
- * 3. Minimal total power score difference between Team 1 and Team 2.
+ * PIPELINE:
+ * Step 1: Generate all combinations (C(10,5) = 252).
+ * Step 2: Strict Constraints (Never Same Team & Default Roles).
+ * Step 3: Filter Top 2 separation priority.
+ * Step 4: Calculate minDiff.
+ * Step 5: Soft Tolerance Window (powerDiff <= minDiff + TOLERANCE).
+ * Step 6: History Anti-Repeat Filter (exclude recentHistorySignatures, fallback if empty).
+ * Step 7: Weighted Random Selection based on weight = 1 / (powerDiff + 1).
+ * Step 8: Return chosen assignment + canonical signature.
  */
 export function calculateV3PowerBalancedTeams(
   activeSummoners: V3Summoner[],
   defaultRoles: DefaultRoleConfig,
   neverSameTeam: ExclusionPair | null,
+  options: V3PowerBalancedOptions = {},
 ): V3PowerBalancedResult | null {
   if (activeSummoners.length < 2) {
     return null;
   }
+
+  const { tolerance = 2, recentHistorySignatures = [] } = options;
 
   const trimmed = activeSummoners.slice(0, 10);
   const totalCount = trimmed.length;
@@ -62,6 +121,7 @@ export function calculateV3PowerBalancedTeams(
   const top1Id = sortedByPower[0]?.id;
   const top2Id = sortedByPower[1]?.id;
 
+  // Step 1: Generate all team 1 combinations
   const team1Combinations = generateCombinations(totalCount, team1Size);
 
   type PartitionCandidate = {
@@ -73,6 +133,7 @@ export function calculateV3PowerBalancedTeams(
     top2Separated: boolean;
     violatesExclusions: boolean;
     violatesDefaultRoles: boolean;
+    signature: string;
   };
 
   const candidates: PartitionCandidate[] = [];
@@ -85,11 +146,10 @@ export function calculateV3PowerBalancedTeams(
     const team1NameSet = new Set(team1.map((s) => s.name));
     const team2NameSet = new Set(team2.map((s) => s.name));
 
-    // 1. Check Never Same Team constraint
+    // Check Never Same Team constraint
     let violatesExclusions = false;
     if (neverSameTeam && neverSameTeam.a && neverSameTeam.b) {
-      const a = neverSameTeam.a;
-      const b = neverSameTeam.b;
+      const { a, b } = neverSameTeam;
       if (
         (team1NameSet.has(a) && team1NameSet.has(b)) ||
         (team2NameSet.has(a) && team2NameSet.has(b))
@@ -98,14 +158,13 @@ export function calculateV3PowerBalancedTeams(
       }
     }
 
-    // 2. Check Default Role compatibility
+    // Check Default Role compatibility
     let violatesDefaultRoles = false;
     for (const role of ROLES_ORDER) {
       const roleConfig = defaultRoles[role];
       if (!roleConfig) continue;
       const { p1, p2 } = roleConfig;
 
-      // If both p1 and p2 are assigned to this role, they cannot be on the same team
       if (p1 && p2) {
         if (
           (team1NameSet.has(p1) && team1NameSet.has(p2)) ||
@@ -117,16 +176,17 @@ export function calculateV3PowerBalancedTeams(
       }
     }
 
-    // 3. Check top 2 separation
+    // Check top 2 separation
     const top1InT1 = team1.some((s) => s.id === top1Id);
     const top2InT1 = team1.some((s) => s.id === top2Id);
     const top2Separated = Boolean(
       top1Id && top2Id && ((top1InT1 && !top2InT1) || (!top1InT1 && top2InT1)),
     );
 
-    const team1Power = team1.reduce((acc, s) => acc + s.powerScore, 0);
-    const team2Power = team2.reduce((acc, s) => acc + s.powerScore, 0);
+    const team1Power = team1.reduce((accumulator, summoner) => accumulator + summoner.powerScore, 0);
+    const team2Power = team2.reduce((accumulator, summoner) => accumulator + summoner.powerScore, 0);
     const powerDiff = Math.abs(team1Power - team2Power);
+    const signature = getPartitionSignature(team1, team2);
 
     candidates.push({
       team1,
@@ -137,25 +197,28 @@ export function calculateV3PowerBalancedTeams(
       top2Separated,
       violatesExclusions,
       violatesDefaultRoles,
+      signature,
     });
   }
 
-  // Priority 1: Filter candidates that violate NO constraints
-  let validCandidates = candidates.filter((c) => !c.violatesExclusions && !c.violatesDefaultRoles);
+  // Step 2: Filter candidates through Strict Constraints
+  let validCandidates = candidates.filter(
+    (candidate) => !candidate.violatesExclusions && !candidate.violatesDefaultRoles,
+  );
 
-  // Fallback if constraints cannot be satisfied simultaneously
+  // Fallback safeguards if strict constraints cannot be satisfied simultaneously
   if (validCandidates.length === 0) {
-    validCandidates = candidates.filter((c) => !c.violatesExclusions);
+    validCandidates = candidates.filter((candidate) => !candidate.violatesExclusions);
   }
   if (validCandidates.length === 0) {
     validCandidates = candidates;
   }
 
-  // Priority 2: Prefer partitions where top 2 power summoners are separated
-  const separatedCandidates = validCandidates.filter((c) => c.top2Separated);
+  // Step 3: Prefer partitions where top 2 power summoners are separated
+  const separatedCandidates = validCandidates.filter((candidate) => candidate.top2Separated);
   const poolToUse = separatedCandidates.length > 0 ? separatedCandidates : validCandidates;
 
-  // Priority 3: Minimal total power difference
+  // Step 4: Calculate minDiff
   let minDiff = Infinity;
   for (const item of poolToUse) {
     if (item.powerDiff < minDiff) {
@@ -163,14 +226,28 @@ export function calculateV3PowerBalancedTeams(
     }
   }
 
-  const bestCandidates = poolToUse.filter((item) => item.powerDiff === minDiff);
-  const chosen = bestCandidates[Math.floor(Math.random() * bestCandidates.length)];
+  // Step 5: Soft Tolerance Window (powerDiff <= minDiff + TOLERANCE)
+  const acceptableCandidates = poolToUse.filter((candidate) => candidate.powerDiff <= minDiff + tolerance);
+
+  // Step 6: History Anti-Repeat Filter (exclude recentHistorySignatures)
+  const historySet = new Set(recentHistorySignatures);
+  let freshCandidates = acceptableCandidates.filter(
+    (candidate) => !historySet.has(candidate.signature),
+  );
+
+  // Fallback to acceptable candidates if history filter eliminates all choices
+  if (freshCandidates.length === 0) {
+    freshCandidates = acceptableCandidates;
+  }
+
+  // Step 7: Weighted Random Selection (Weight = 1 / (powerDiff + 1))
+  const chosen = selectWeightedRandomCandidate(freshCandidates);
 
   if (!chosen) {
     return null;
   }
 
-  // Build lane pairings matching ROLES_ORDER
+  // Step 8: Build lane pairings matching ROLES_ORDER & Interleaved summoner order
   const lanePairings: V3TeamLaneResult[] = [];
   const assignedTeam1Names = new Set<string>();
   const assignedTeam2Names = new Set<string>();
@@ -226,7 +303,6 @@ export function calculateV3PowerBalancedTeams(
     }
   }
 
-  // Clean list of non-nulls for final result
   const finalTeam1 = orderedTeam1.filter(Boolean) as V3Summoner[];
   const finalTeam2 = orderedTeam2.filter(Boolean) as V3Summoner[];
 
@@ -256,5 +332,6 @@ export function calculateV3PowerBalancedTeams(
     powerDiff: chosen.powerDiff,
     top2Separated: chosen.top2Separated,
     lanePairings,
+    signature: chosen.signature,
   };
 }
