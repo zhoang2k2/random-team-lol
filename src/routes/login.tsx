@@ -39,7 +39,8 @@ export function LoginPage() {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN") {
         analytics.login({ method: "google" });
-        navigate({ to: "/random-lol" });
+        window.location.href = `${window.location.origin}/vi/random-lol`;
+        return;
       }
       setUser(session?.user ?? null);
       setLoading(false);
