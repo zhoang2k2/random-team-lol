@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ROLE_META, ROLES_ORDER, type Role } from "@/lib/lol-api";
+import { useI18n } from "@/i18n/I18nContext";
 
 export type DefaultRoleConfig = Record<Role, { p1: string; p2: string }>;
 
@@ -40,6 +41,7 @@ export function DefaultRolePicker({
   disabled = false,
   onClear,
 }: Props) {
+  const { locale } = useI18n();
   const activeMembers = members.slice(0, teamSize * 2);
   const lanesNeeded = Math.ceil(activeMembers.length / 2);
 
@@ -54,33 +56,31 @@ export function DefaultRolePicker({
   const handleClear = onClear ?? (() => onChange({ ...EMPTY_DEFAULT_ROLES }));
 
   const handleRoleChange = (role: Role, slotKey: "p1" | "p2", val: string) => {
-    onChange(
-      produce(value, role, slotKey, val, activeMembers, lanesNeeded),
-    );
+    onChange(produce(value, role, slotKey, val, activeMembers, lanesNeeded));
   };
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <label className="font-display text-xs uppercase tracking-[0.25em] text-muted-foreground">
-          Default role
+          {locale === "en" ? "Default Roles" : "Vai Trò Mặc Định"}
         </label>
         <button
           type="button"
           onClick={handleClear}
-          className="text-[10px] text-red-400 text-muted-foreground hover:text-gold-bright transition-colors uppercase tracking-wider font-display cursor-pointer"
+          className="text-[10px] text-red-400 hover:text-gold-bright transition-colors uppercase tracking-wider font-display cursor-pointer"
           disabled={disabled}
         >
-          Clear
+          {locale === "en" ? "Clear" : "Xóa"}
         </button>
       </div>
 
-      <div className="border border-gold/20 bg-background/20 p-3 space-y-3 mt-2">
+      <div className="border border-gold/20 bg-background/20 p-3 space-y-3 mt-2 rounded">
         {/* Header row */}
         <div className="grid grid-cols-[50px_1fr_1fr] gap-2 items-center text-center font-display text-[10px] uppercase tracking-wider text-muted-foreground border-b border-gold/15 pb-2">
-          <div>Role</div>
-          <div>Player 1</div>
-          <div>Player 2</div>
+          <div>{locale === "en" ? "Role" : "Vai Trò"}</div>
+          <div>{locale === "en" ? "Summoner 1" : "Anh Hùng 1"}</div>
+          <div>{locale === "en" ? "Summoner 2" : "Anh Hùng 2"}</div>
         </div>
 
         {ROLES_ORDER.map((role) => {
@@ -108,7 +108,13 @@ export function DefaultRolePicker({
             >
               <div
                 className="flex justify-center items-center min-w-0"
-                title={isRoleDisabled ? "Đã đạt đủ số lượng lane tối đa" : ""}
+                title={
+                  isRoleDisabled
+                    ? locale === "en"
+                      ? "Maximum lane count reached"
+                      : "Đã đạt đủ số lượng lane tối đa"
+                    : ""
+                }
               >
                 <img
                   src={meta.iconUrl}
@@ -122,7 +128,7 @@ export function DefaultRolePicker({
                 value={value[role].p1}
                 onChange={(v) => handleRoleChange(role, "p1", v)}
                 options={getOptions("p1")}
-                placeholder="Chọn..."
+                placeholder={locale === "en" ? "Select..." : "Chọn..."}
                 disabled={disabled || isRoleDisabled}
               />
 
@@ -130,7 +136,7 @@ export function DefaultRolePicker({
                 value={value[role].p2}
                 onChange={(v) => handleRoleChange(role, "p2", v)}
                 options={getOptions("p2")}
-                placeholder="Chọn..."
+                placeholder={locale === "en" ? "Select..." : "Chọn..."}
                 disabled={disabled || isRoleDisabled}
               />
             </div>
@@ -142,7 +148,7 @@ export function DefaultRolePicker({
 }
 
 // ---------------------------------------------------------------------------
-// Auto-fill logic (ported from index.tsx handleRoleChange)
+// Auto-fill logic
 // ---------------------------------------------------------------------------
 
 function produce(
@@ -176,9 +182,7 @@ function produce(
 
     const unassigned = activeMembers.filter((m) => !assigned.has(m));
     const allowedRoles =
-      currentActiveRoles.length >= lanesNeeded
-        ? currentActiveRoles
-        : (ROLES_ORDER as Role[]);
+      currentActiveRoles.length >= lanesNeeded ? currentActiveRoles : (ROLES_ORDER as Role[]);
 
     const emptySlots: { r: Role; s: "p1" | "p2" }[] = [];
     for (const r of allowedRoles) {
@@ -197,10 +201,10 @@ function produce(
 }
 
 // ---------------------------------------------------------------------------
-// SummonerSelect (local copy — same UI as index.tsx)
+// SummonerSelect (reusable hextech custom dropdown)
 // ---------------------------------------------------------------------------
 
-function SummonerSelect({
+export function SummonerSelect({
   value,
   onChange,
   options,
@@ -264,7 +268,10 @@ function SummonerSelect({
               <li>
                 <button
                   type="button"
-                  onClick={() => { onChange(""); setIsOpen(false); }}
+                  onClick={() => {
+                    onChange("");
+                    setIsOpen(false);
+                  }}
                   className="w-full text-left px-3 py-2 text-[10px] italic text-muted-foreground hover:bg-gold/10 hover:text-gold-bright transition-colors"
                 >
                   -- {placeholder} --
@@ -274,7 +281,10 @@ function SummonerSelect({
                 <li key={option}>
                   <button
                     type="button"
-                    onClick={() => { onChange(option); setIsOpen(false); }}
+                    onClick={() => {
+                      onChange(option);
+                      setIsOpen(false);
+                    }}
                     className={`w-full text-left px-3 py-2 text-xs font-display transition-colors ${
                       value === option
                         ? "bg-gold/25 text-gold-bright border-l-2 border-gold-bright"

@@ -9,9 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as V2RouteImport } from './routes/v2'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as RandomLolOldRouteImport } from './routes/random-lol-old'
+import { Route as RandomLolRouteImport } from './routes/random-lol'
 import { Route as RandomLaneRouteImport } from './routes/random-lane'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as HuongDanRouteImport } from './routes/huong-dan'
 import { Route as GioiThieuRouteImport } from './routes/gioi-thieu'
 import { Route as FaqRouteImport } from './routes/faq'
@@ -19,22 +21,35 @@ import { Route as CustomGameRandomRouteImport } from './routes/custom-game-rando
 import { Route as CmvnRouteImport } from './routes/cmvn'
 import { Route as ChiaTeamLienMinhRouteImport } from './routes/chia-team-lien-minh'
 import { Route as AramRandomRouteImport } from './routes/aram-random'
+import { Route as LocaleRouteImport } from './routes/$locale'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as V2RandomRouteImport } from './routes/v2/random'
+import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
+import { Route as LocaleRandomLolRouteImport } from './routes/$locale/random-lol'
+import { Route as LocaleLoginRouteImport } from './routes/$locale/login'
 
-const V2Route = V2RouteImport.update({
-  id: '/v2',
-  path: '/v2',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RandomLolOldRoute = RandomLolOldRouteImport.update({
+  id: '/random-lol-old',
+  path: '/random-lol-old',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RandomLolRoute = RandomLolRouteImport.update({
+  id: '/random-lol',
+  path: '/random-lol',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RandomLaneRoute = RandomLaneRouteImport.update({
   id: '/random-lane',
   path: '/random-lane',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HuongDanRoute = HuongDanRouteImport.update({
@@ -72,19 +87,35 @@ const AramRandomRoute = AramRandomRouteImport.update({
   path: '/aram-random',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleRoute = LocaleRouteImport.update({
+  id: '/$locale',
+  path: '/$locale',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const V2RandomRoute = V2RandomRouteImport.update({
-  id: '/random',
-  path: '/random',
-  getParentRoute: () => V2Route,
+const LocaleIndexRoute = LocaleIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LocaleRoute,
+} as any)
+const LocaleRandomLolRoute = LocaleRandomLolRouteImport.update({
+  id: '/random-lol',
+  path: '/random-lol',
+  getParentRoute: () => LocaleRoute,
+} as any)
+const LocaleLoginRoute = LocaleLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => LocaleRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$locale': typeof LocaleRouteWithChildren
   '/aram-random': typeof AramRandomRoute
   '/chia-team-lien-minh': typeof ChiaTeamLienMinhRoute
   '/cmvn': typeof CmvnRoute
@@ -92,10 +123,14 @@ export interface FileRoutesByFullPath {
   '/faq': typeof FaqRoute
   '/gioi-thieu': typeof GioiThieuRoute
   '/huong-dan': typeof HuongDanRoute
+  '/login': typeof LoginRoute
   '/random-lane': typeof RandomLaneRoute
+  '/random-lol': typeof RandomLolRoute
+  '/random-lol-old': typeof RandomLolOldRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/v2': typeof V2RouteWithChildren
-  '/v2/random': typeof V2RandomRoute
+  '/$locale/login': typeof LocaleLoginRoute
+  '/$locale/random-lol': typeof LocaleRandomLolRoute
+  '/$locale/': typeof LocaleIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -106,14 +141,19 @@ export interface FileRoutesByTo {
   '/faq': typeof FaqRoute
   '/gioi-thieu': typeof GioiThieuRoute
   '/huong-dan': typeof HuongDanRoute
+  '/login': typeof LoginRoute
   '/random-lane': typeof RandomLaneRoute
+  '/random-lol': typeof RandomLolRoute
+  '/random-lol-old': typeof RandomLolOldRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/v2': typeof V2RouteWithChildren
-  '/v2/random': typeof V2RandomRoute
+  '/$locale/login': typeof LocaleLoginRoute
+  '/$locale/random-lol': typeof LocaleRandomLolRoute
+  '/$locale': typeof LocaleIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$locale': typeof LocaleRouteWithChildren
   '/aram-random': typeof AramRandomRoute
   '/chia-team-lien-minh': typeof ChiaTeamLienMinhRoute
   '/cmvn': typeof CmvnRoute
@@ -121,15 +161,20 @@ export interface FileRoutesById {
   '/faq': typeof FaqRoute
   '/gioi-thieu': typeof GioiThieuRoute
   '/huong-dan': typeof HuongDanRoute
+  '/login': typeof LoginRoute
   '/random-lane': typeof RandomLaneRoute
+  '/random-lol': typeof RandomLolRoute
+  '/random-lol-old': typeof RandomLolOldRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/v2': typeof V2RouteWithChildren
-  '/v2/random': typeof V2RandomRoute
+  '/$locale/login': typeof LocaleLoginRoute
+  '/$locale/random-lol': typeof LocaleRandomLolRoute
+  '/$locale/': typeof LocaleIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$locale'
     | '/aram-random'
     | '/chia-team-lien-minh'
     | '/cmvn'
@@ -137,10 +182,14 @@ export interface FileRouteTypes {
     | '/faq'
     | '/gioi-thieu'
     | '/huong-dan'
+    | '/login'
     | '/random-lane'
+    | '/random-lol'
+    | '/random-lol-old'
     | '/sitemap.xml'
-    | '/v2'
-    | '/v2/random'
+    | '/$locale/login'
+    | '/$locale/random-lol'
+    | '/$locale/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -151,13 +200,18 @@ export interface FileRouteTypes {
     | '/faq'
     | '/gioi-thieu'
     | '/huong-dan'
+    | '/login'
     | '/random-lane'
+    | '/random-lol'
+    | '/random-lol-old'
     | '/sitemap.xml'
-    | '/v2'
-    | '/v2/random'
+    | '/$locale/login'
+    | '/$locale/random-lol'
+    | '/$locale'
   id:
     | '__root__'
     | '/'
+    | '/$locale'
     | '/aram-random'
     | '/chia-team-lien-minh'
     | '/cmvn'
@@ -165,14 +219,19 @@ export interface FileRouteTypes {
     | '/faq'
     | '/gioi-thieu'
     | '/huong-dan'
+    | '/login'
     | '/random-lane'
+    | '/random-lol'
+    | '/random-lol-old'
     | '/sitemap.xml'
-    | '/v2'
-    | '/v2/random'
+    | '/$locale/login'
+    | '/$locale/random-lol'
+    | '/$locale/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LocaleRoute: typeof LocaleRouteWithChildren
   AramRandomRoute: typeof AramRandomRoute
   ChiaTeamLienMinhRoute: typeof ChiaTeamLienMinhRoute
   CmvnRoute: typeof CmvnRoute
@@ -180,20 +239,15 @@ export interface RootRouteChildren {
   FaqRoute: typeof FaqRoute
   GioiThieuRoute: typeof GioiThieuRoute
   HuongDanRoute: typeof HuongDanRoute
+  LoginRoute: typeof LoginRoute
   RandomLaneRoute: typeof RandomLaneRoute
+  RandomLolRoute: typeof RandomLolRoute
+  RandomLolOldRoute: typeof RandomLolOldRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
-  V2Route: typeof V2RouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/v2': {
-      id: '/v2'
-      path: '/v2'
-      fullPath: '/v2'
-      preLoaderRoute: typeof V2RouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -201,11 +255,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/random-lol-old': {
+      id: '/random-lol-old'
+      path: '/random-lol-old'
+      fullPath: '/random-lol-old'
+      preLoaderRoute: typeof RandomLolOldRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/random-lol': {
+      id: '/random-lol'
+      path: '/random-lol'
+      fullPath: '/random-lol'
+      preLoaderRoute: typeof RandomLolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/random-lane': {
       id: '/random-lane'
       path: '/random-lane'
       fullPath: '/random-lane'
       preLoaderRoute: typeof RandomLaneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/huong-dan': {
@@ -257,6 +332,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AramRandomRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale': {
+      id: '/$locale'
+      path: '/$locale'
+      fullPath: '/$locale'
+      preLoaderRoute: typeof LocaleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -264,28 +346,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/v2/random': {
-      id: '/v2/random'
-      path: '/random'
-      fullPath: '/v2/random'
-      preLoaderRoute: typeof V2RandomRouteImport
-      parentRoute: typeof V2Route
+    '/$locale/': {
+      id: '/$locale/'
+      path: '/'
+      fullPath: '/$locale/'
+      preLoaderRoute: typeof LocaleIndexRouteImport
+      parentRoute: typeof LocaleRoute
+    }
+    '/$locale/random-lol': {
+      id: '/$locale/random-lol'
+      path: '/random-lol'
+      fullPath: '/$locale/random-lol'
+      preLoaderRoute: typeof LocaleRandomLolRouteImport
+      parentRoute: typeof LocaleRoute
+    }
+    '/$locale/login': {
+      id: '/$locale/login'
+      path: '/login'
+      fullPath: '/$locale/login'
+      preLoaderRoute: typeof LocaleLoginRouteImport
+      parentRoute: typeof LocaleRoute
     }
   }
 }
 
-interface V2RouteChildren {
-  V2RandomRoute: typeof V2RandomRoute
+interface LocaleRouteChildren {
+  LocaleLoginRoute: typeof LocaleLoginRoute
+  LocaleRandomLolRoute: typeof LocaleRandomLolRoute
+  LocaleIndexRoute: typeof LocaleIndexRoute
 }
 
-const V2RouteChildren: V2RouteChildren = {
-  V2RandomRoute: V2RandomRoute,
+const LocaleRouteChildren: LocaleRouteChildren = {
+  LocaleLoginRoute: LocaleLoginRoute,
+  LocaleRandomLolRoute: LocaleRandomLolRoute,
+  LocaleIndexRoute: LocaleIndexRoute,
 }
 
-const V2RouteWithChildren = V2Route._addFileChildren(V2RouteChildren)
+const LocaleRouteWithChildren =
+  LocaleRoute._addFileChildren(LocaleRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LocaleRoute: LocaleRouteWithChildren,
   AramRandomRoute: AramRandomRoute,
   ChiaTeamLienMinhRoute: ChiaTeamLienMinhRoute,
   CmvnRoute: CmvnRoute,
@@ -293,9 +395,11 @@ const rootRouteChildren: RootRouteChildren = {
   FaqRoute: FaqRoute,
   GioiThieuRoute: GioiThieuRoute,
   HuongDanRoute: HuongDanRoute,
+  LoginRoute: LoginRoute,
   RandomLaneRoute: RandomLaneRoute,
+  RandomLolRoute: RandomLolRoute,
+  RandomLolOldRoute: RandomLolOldRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
-  V2Route: V2RouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

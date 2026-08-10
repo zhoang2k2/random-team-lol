@@ -71,8 +71,16 @@ export function LaneRow({
       return () => clearTimeout(t);
     }
     if (phase === "pre-members") {
+      if (!alphaName && !betaName) {
+        const t = setTimeout(() => setPhase("done"), PRE_DELAY_MS);
+        return () => clearTimeout(t);
+      }
       const t = setTimeout(() => setPhase("members"), PRE_DELAY_MS);
       return () => clearTimeout(t);
+    }
+    if (phase === "members" && !alphaName && !betaName) {
+      setPhase("done");
+      return;
     }
     if (phase === "pre-champ-alpha") {
       if (!alphaChampion) {

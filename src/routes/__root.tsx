@@ -74,12 +74,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "theme-color", content: "#0a0a1a" },
-      { name: "robots", content: "index, follow, max-image-preview:large" },
-      { property: "og:site_name", content: "Nghiện LOL" },
+      { name: "robots", content: "index, follow" },
+      { property: "og:site_name", content: "Random Liên Minh" },
       { property: "og:locale", content: "vi_VN" },
-      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
-      { name: "author", content: "Nghiện LOL" },
+      { name: "author", content: "zhoang2k2" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -139,7 +139,7 @@ gtag('config', 'G-RCE35Y29CN', {
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="vi">
       <head>
         <HeadContent />
       </head>

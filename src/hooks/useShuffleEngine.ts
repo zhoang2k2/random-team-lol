@@ -1,11 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import {
-  getAllChampions,
-  pickRandomChampions,
-  type Champion,
-  type Role,
-} from "@/lib/lol-api";
+import { getAllChampions, pickRandomChampions, type Champion, type Role } from "@/lib/lol-api";
 import { buildLanePairings, type ExclusionPair } from "@/lib/randomize";
 import { balanceByPower, interleaveTeams, type PowerEntry } from "@/lib/powerBalance";
 import { analytics } from "@/lib/analytics";
@@ -101,8 +96,7 @@ export const useShuffleEngine = ({
   const canShuffle = members.length >= 2 && champions.length > 0 && !shuffling;
 
   const activeRound = rounds.find((r) => r.id === activeRoundId) ?? null;
-  const activeLane =
-    activeRound && activeLaneIdx >= 0 ? activeRound.lanes[activeLaneIdx] : null;
+  const activeLane = activeRound && activeLaneIdx >= 0 ? activeRound.lanes[activeLaneIdx] : null;
   const showArena = shuffling || activeLane != null;
 
   // ── finishRound ────────────────────────────────────────────────────────────
@@ -118,9 +112,7 @@ export const useShuffleEngine = ({
     if (roundId == null || laneIdx < 0) return;
 
     setActiveLaneIdx(-1);
-    setRounds((prev) =>
-      prev.map((r) => (r.id === roundId ? { ...r, revealed: laneIdx + 1 } : r)),
-    );
+    setRounds((prev) => prev.map((r) => (r.id === roundId ? { ...r, revealed: laneIdx + 1 } : r)));
 
     const round = rounds.find((r) => r.id === roundId);
     const totalLaneCount = round?.lanes.length ?? 0;
@@ -245,9 +237,7 @@ export const useShuffleEngine = ({
 
   // ── Derived power balance info ─────────────────────────────────────────────
   const balancedTeams =
-    evaluatePower && powerEntries && powerEntries.length >= 2
-      ? balanceByPower(powerEntries)
-      : null;
+    evaluatePower && powerEntries && powerEntries.length >= 2 ? balanceByPower(powerEntries) : null;
 
   return {
     // champion state

@@ -11,6 +11,7 @@
 Danh sách **tất cả tính năng đang hoạt động**. Khi làm version mới, dùng checklist này để không bỏ sót.
 
 ### 0.1 Summoner Management
+
 - [x] Add summoner — input text + Enter hoặc button Add
 - [x] Max 10 summoners — disable input khi đạt max
 - [x] Duplicate check — không cho thêm tên trùng
@@ -25,6 +26,7 @@ Danh sách **tất cả tính năng đang hoạt động**. Khi làm version m�
 - [x] Power input subitem — input ngay dưới item, hiện khi Evaluate Power bật (V2 only)
 
 ### 0.2 Settings
+
 - [x] Shuffle team toggle — random thứ tự summoner khi shuffle
 - [x] Skip animation toggle — hiện kết quả ngay, bỏ qua lane animation
 - [x] Animation speed — V1: laneSeconds 2–30s (commented); V2: animationSeconds 0–2.5s
@@ -44,6 +46,7 @@ Danh sách **tất cả tính năng đang hoạt động**. Khi làm version m�
   - [x] Algorithm: greedy snake-draft (sort desc power, assign to lower-total team)
 
 ### 0.3 Shuffle Engine
+
 - [x] Team pairing — buildLanePairings() với exclusions, defaultRoles, up to 1000 attempts
 - [x] Interleave order — alpha[0], beta[0], alpha[1], beta[1]... cho manual order (V1)
 - [x] Power-balanced order — balanceByPower() + interleaveTeams() (V2)
@@ -58,9 +61,10 @@ Danh sách **tất cả tính năng đang hoạt động**. Khi làm version m�
 - [x] isTeamEmpty guard — validate alpha + beta không rỗng khi shuffleTeam=false (V1 only)
 - [x] teamSize auto-calc — min(5, ceil(members/2)), auto-bump khi dưới minimum (V1)
 - [x] Scroll behavior — scroll đến arena khi bắt đầu, scroll đến results khi xong (V1 only)
-- [x] Jade_* filter — lọc bỏ champion variants với prefix "Jade_" trong Data Dragon response
+- [x] Jade*\* filter — lọc bỏ champion variants với prefix "Jade*" trong Data Dragon response
 
 ### 0.4 Result Display
+
 - [x] Per-round table — mỗi Round là bảng riêng với header "Round N"
 - [x] Champion portrait — ảnh 48x48 avatar
 - [x] Champion name + title — tên và title champion
@@ -74,6 +78,7 @@ Danh sách **tất cả tính năng đang hoạt động**. Khi làm version m�
 - [x] Results skeleton — loading placeholder khi hydrate (V1 only)
 
 ### 0.5 Screenshot
+
 - [x] Capture all rounds — stitch tất cả rounds thành 1 PNG
 - [x] Select mode — chọn từng round để chụp (V1 only)
   - [x] Click round để toggle select
@@ -88,6 +93,7 @@ Danh sách **tất cả tính năng đang hoạt động**. Khi làm version m�
 ### 0.6 Persist / Hydrate (localStorage)
 
 V1 — key summoners-draft-state-v1:
+
 - [x] summoners[] { id, name, team }
 - [x] teamSize, randomRole, randomMembers
 - [x] exclusions[] multiple pairs
@@ -100,6 +106,7 @@ V1 — key summoners-draft-state-v1:
 - [x] Legacy migration: members[] → summoners[] via distributeEqually()
 
 V2 — key v2-store-v1:
+
 - [x] summoners[] { id, name, power }
 - [x] settings { shuffleTeam, skipAnimation, animationSeconds, evaluatePower, defaultRoles, exclusion }
 - [x] results[] LaneResult[] — DEAD CODE, không được update sau shuffle ❌
@@ -108,6 +115,7 @@ V2 — key v2-store-v1:
 - [ ] roundIdSeed — KHÔNG PERSIST ← gap
 
 ### 0.7 UI / Design System
+
 - [x] Hextech CSS classes — hextech-frame, btn-hex, btn-hex-primary, btn-hex-danger, input-hex, gold-divider, text-glow-gold, animate-fade-in
 - [x] hextech-frame — corner accents via ::before/::after pseudo-elements
 - [x] btn-hex clip-path — polygon(8px 0, 100% 0, 100% calc(100%-8px), calc(100%-8px) 100%, 0 100%, 0 8px)
@@ -120,6 +128,7 @@ V2 — key v2-store-v1:
 - [x] Font display — Cinzel/Trajan serif cho UI labels
 
 ### 0.8 Navigation & Routes
+
 - [x] / — V1 main (đầy đủ tính năng)
 - [x] /v2/random — V2 main
 - [x] /v2 — layout wrapper (V2StoreProvider + Outlet)
@@ -134,7 +143,8 @@ V2 — key v2-store-v1:
 - [x] /sitemap.xml — Sitemap route
 
 ### 0.9 SEO
-- [x] Per-page: title, description, keywords, og:*, twitter:card, canonical
+
+- [x] Per-page: title, description, keywords, og:\*, twitter:card, canonical
 - [x] Root: charset, viewport, robots, og:site_name, hreflang vi-VN + x-default
 - [x] JSON-LD WebApplication (V1) + WebSite (root)
 - [x] buildSeoMeta() helper cho các route phụ
@@ -143,7 +153,8 @@ V2 — key v2-store-v1:
 - [x] InternalNav component — hidden (display:none), giữ SEO links
 
 ### 0.10 Analytics — GA4 (G-RCE35Y29CN)
-- [x] Script inject tại __root.tsx — load trên mọi route
+
+- [x] Script inject tại \_\_root.tsx — load trên mọi route
 - [x] usePageTracking — auto page view qua router.subscribe("onLoad")
 - [x] trackEvent(event, params) — type-safe wrapper
 - [x] analytics.shuffleTeam — { version, member_count, skip_animation }
@@ -157,7 +168,8 @@ V2 — key v2-store-v1:
 - [ ] analytics.settingToggle — defined, CHƯA GỌI ở bất kỳ đâu
 
 ### 0.11 Libs
-- analytics.ts — GA4 wrapper, AppEvent union type, analytics.* helpers
+
+- analytics.ts — GA4 wrapper, AppEvent union type, analytics.\* helpers
 - capture.ts — captureElements() html2canvas-pro, multi-element stitch
 - constants.ts — CHAMPION_TAGS array, ChampionTag type
 - lol-api.ts — getAllChampions(), pickRandomChampions(), ROLE_META, ROLES_ORDER, Champion type (có tags: ChampionTag[])
@@ -168,6 +180,7 @@ V2 — key v2-store-v1:
 - v2-types.ts — DEAD FILE — duplicate types, không được import ở đâu cả
 
 ### 0.12 Hooks
+
 - useLocalStorage.ts — [state, setState, remove], SSR guard, write-on-change useEffect
 - useShuffleEngine.ts — champion load + lane animation + shuffle orchestration + power balance + analytics
 - usePageTracking.ts — GA4 page view tracking, router.subscribe
@@ -175,6 +188,7 @@ V2 — key v2-store-v1:
 - use-mobile.tsx — useIsMobile(), breakpoint 768px
 
 ### 0.13 Components (shared)
+
 - SiteHeader / V2Header — sticky nav, Version 1/2 tabs, pageHeading slot
 - ToggleRow — generic boolean toggle button
 - ShuffleTeamToggle — wrapper ToggleRow với label cố định
@@ -186,6 +200,7 @@ V2 — key v2-store-v1:
 - InternalNav — hidden nav links giữa các tools
 
 ### 0.14 Components (V2-specific, src/components/v2/)
+
 - PrimaryButton — btn-hex variants (primary/default/danger), sizes (sm/md/lg)
 - TextInput — input-hex styled
 - NumberInput — no spinner (appearance:textfield), min/max
@@ -202,12 +217,14 @@ V2 — key v2-store-v1:
 ## 1. Gap Analysis V1 → V2
 
 ### 🔴 Critical (ảnh hưởng UX)
+
 1. Rounds không persist → mất kết quả khi reload
 2. Champion dedup không persist → có thể pick lại champion sau reload
 3. results[] trong V2 store là dead code (không sync với engine)
 4. Multiple exclusion pairs → V2 chỉ 1 cặp
 
 ### 🟡 Medium
+
 5. Select mode screenshot → V2 chỉ capture all
 6. isTeamEmpty guard → V2 không validate trước shuffle
 7. Scroll behavior → V2 không auto-scroll
@@ -217,6 +234,7 @@ V2 — key v2-store-v1:
 11. 3 deprecated components chưa dọn: SkipAnimationToggle.tsx, EvaluatePowerToggle.tsx, SettingsSidebar.tsx
 
 ### 🟢 V2 tốt hơn V1
+
 - Power balance (evaluatePower + greedy algorithm)
 - Summoner rename inline
 - Accordion expand/collapse UX
@@ -253,14 +271,14 @@ src/
 type V3Summoner = {
   id: string;
   name: string;
-  team: "alpha" | "beta";   // khôi phục team column như V1
+  team: "alpha" | "beta"; // khôi phục team column như V1
   power: number;
 };
 
 type V3Settings = {
   shuffleTeam: boolean;
   skipAnimation: boolean;
-  animationSeconds: number;    // 0–30s
+  animationSeconds: number; // 0–30s
   evaluatePower: boolean;
   defaultRoles: DefaultRoleConfig;
   exclusions: ExclusionPair[]; // multiple pairs như V1
@@ -269,15 +287,16 @@ type V3Settings = {
 type V3PersistedState = {
   summoners: V3Summoner[];
   settings: V3Settings;
-  rounds: ShuffleRound[];      // persist ✅
-  usedChampionIds: string[];   // persist ✅
-  roundIdSeed: number;         // persist ✅
+  rounds: ShuffleRound[]; // persist ✅
+  usedChampionIds: string[]; // persist ✅
+  roundIdSeed: number; // persist ✅
 };
 ```
 
 ### 3.2 Engine — extend useShuffleEngine
 
 Thêm vào UseShuffleEngineOptions:
+
 ```ts
 initialRounds?: ShuffleRound[];
 initialRoundIdSeed?: number;
@@ -286,6 +305,7 @@ version?: "v1" | "v2" | "v3";
 ```
 
 ### 3.3 Routes
+
 ```
 src/routes/v3.tsx
 src/routes/v3/random.tsx
@@ -295,6 +315,7 @@ src/contexts/V3StoreContext.tsx
 ### 3.4 V3 Feature Checklist
 
 Fixes bắt buộc từ V2:
+
 - [ ] Persist rounds[] + usedChampionIds + roundIdSeed
 - [ ] Restore rounds sau reload via initialRounds vào engine
 - [ ] Multiple exclusion pairs
@@ -305,6 +326,7 @@ Fixes bắt buộc từ V2:
 - [ ] Fire missing analytics: deleteRound, screenshot, settingToggle
 
 Giữ từ V2:
+
 - [ ] Power balance (Evaluate Power + greedy algorithm)
 - [ ] Power input 0–1000 per summoner
 - [ ] Summoner rename inline
@@ -314,6 +336,7 @@ Giữ từ V2:
 - [ ] Tái dụng useShuffleEngine (không viết lại)
 
 Có thể thêm mới:
+
 - [ ] Team column alpha/beta + drag-to-swap như V1
 - [ ] animationSeconds mở rộng 0–30s
 - [ ] Champion tags filter (CHAMPION_TAGS đã có trong constants.ts)
@@ -323,6 +346,7 @@ Có thể thêm mới:
 ## 4. Action Items trước V3
 
 ### Bắt buộc
+
 1. Xoá src/lib/v2-types.ts — dead file
 2. Move shared types ra src/lib/types.ts:
    - DefaultRoleConfig từ DefaultRolePicker.tsx
@@ -333,10 +357,11 @@ Có thể thêm mới:
 5. Fire 3 analytics events còn thiếu
 
 ### Nice to have
+
 6. Extract useScreenshot hook (state + handlers đang inline trong v2/random.tsx)
 7. Extract useSummonerInput hook (inputValue + handleAdd đang inline)
 8. Xoá deprecated: SkipAnimationToggle.tsx, EvaluatePowerToggle.tsx, SettingsSidebar.tsx
 
 ---
 
-*Source: V1 index.tsx, V2 v2/random.tsx, useShuffleEngine.ts, useV2Store.ts, tất cả lib/hooks/components/routes*
+_Source: V1 index.tsx, V2 v2/random.tsx, useShuffleEngine.ts, useV2Store.ts, tất cả lib/hooks/components/routes_

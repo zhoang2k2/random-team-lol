@@ -50,19 +50,21 @@ export const trackEvent = (eventName: AppEvent, params?: EventParams): void => {
  */
 export type AppEvent =
   // ── Shuffle ──────────────────────────────────────────────────────────────
-  | "shuffle_team"          // user clicks Shuffle
-  | "shuffle_stop"          // user clicks Stop during animation
-  | "shuffle_clear"         // user clicks Clear results
-  | "shuffle_delete_round"  // user deletes a single round
-  | "shuffle_screenshot"    // user captures screenshot
+  | "shuffle_team" // user clicks Shuffle
+  | "shuffle_stop" // user clicks Stop during animation
+  | "shuffle_clear" // user clicks Clear results
+  | "shuffle_delete_round" // user deletes a single round
+  | "shuffle_screenshot" // user captures screenshot
   // ── Summoners ────────────────────────────────────────────────────────────
-  | "summoner_add"          // summoner added
-  | "summoner_remove"       // summoner removed
-  | "summoner_rename"       // summoner name changed
+  | "summoner_add" // summoner added
+  | "summoner_remove" // summoner removed
+  | "summoner_rename" // summoner name changed
   // ── Settings ─────────────────────────────────────────────────────────────
-  | "setting_toggle"        // any toggle changed
+  | "setting_toggle" // any toggle changed
+  // ── Auth & User ─────────────────────────────────────────────────────────────
+  | "login" // user logs in via OAuth / Supabase
   // ── Navigation ───────────────────────────────────────────────────────────
-  | "page_view";            // used internally by trackPageView; listed for completeness
+  | "page_view"; // used internally by trackPageView; listed for completeness
 
 // ── Convenience helpers ───────────────────────────────────────────────────────
 
@@ -71,17 +73,14 @@ export const analytics = {
   shuffleTeam: (params: { version: "v1" | "v2"; member_count: number; skip_animation: boolean }) =>
     trackEvent("shuffle_team", params),
 
-  shuffleStop: (params: { version: "v1" | "v2" }) =>
-    trackEvent("shuffle_stop", params),
+  shuffleStop: (params: { version: "v1" | "v2" }) => trackEvent("shuffle_stop", params),
 
-  shuffleClear: (params: { version: "v1" | "v2" }) =>
-    trackEvent("shuffle_clear", params),
+  shuffleClear: (params: { version: "v1" | "v2" }) => trackEvent("shuffle_clear", params),
 
   deleteRound: (params: { version: "v1" | "v2"; round_number: number }) =>
     trackEvent("shuffle_delete_round", params),
 
-  screenshot: (params: { version: "v1" | "v2" }) =>
-    trackEvent("shuffle_screenshot", params),
+  screenshot: (params: { version: "v1" | "v2" }) => trackEvent("shuffle_screenshot", params),
 
   // Summoners
   summonerAdd: (params: { version: "v1" | "v2"; total: number }) =>
@@ -90,10 +89,12 @@ export const analytics = {
   summonerRemove: (params: { version: "v1" | "v2"; total: number }) =>
     trackEvent("summoner_remove", params),
 
-  summonerRename: (params: { version: "v2" }) =>
-    trackEvent("summoner_rename", params),
+  summonerRename: (params: { version: "v2" }) => trackEvent("summoner_rename", params),
 
   // Settings
   settingToggle: (params: { version: "v1" | "v2"; setting: string; value: boolean }) =>
     trackEvent("setting_toggle", params),
+
+  // Auth
+  login: (params: { method: string }) => trackEvent("login", params),
 } as const;

@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800&family=Marcellus&family=Spectral:wght@300;400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800&family=Lexend:wght@300;400;500;600;700;800&family=Marcellus&family=Spectral:wght@300;400;500;600&display=swap");
 
 @import "tailwindcss" source(none);
 @source "../src";
@@ -37,12 +37,24 @@
   --color-hextech-glow: var(--hextech-glow);
   --color-team-alpha: var(--team-alpha);
   --color-team-beta: var(--team-beta);
-  --font-display: "Cinzel", "Marcellus", serif;
-  --font-serif: "Spectral", serif;
+  --font-display: "Lexend", sans-serif;
+  --font-serif: "Lexend", sans-serif;
+  --font-sans: "Lexend", sans-serif;
 }
 
 :root {
   --radius: 0.25rem;
+
+  /* Typography Scale: Ratio 1.2 (Minor Third) */
+  --font-scale-ratio: 1.2;
+  --font-size-3xs: 0.579rem;  /* ~9.3px */
+  --font-size-2xs: 0.694rem;  /* ~11.1px */
+  --font-size-xs: 0.833rem;   /* ~13.3px */
+  --font-size-sm: 1rem;       /* 16px */
+  --font-size-base: 1.2rem;   /* ~19.2px */
+  --font-size-lg: 1.44rem;    /* ~23px */
+  --font-size-xl: 1.728rem;   /* ~27.6px */
+  --font-size-2xl: 2.074rem;  /* ~33.2px */
 
   /* LoL inspired dark hextech palette */
   --background: #030f16;
@@ -146,8 +158,7 @@
 
   .hextech-frame {
     position: relative;
-    background:
-      linear-gradient(180deg, rgba(6, 24, 33, 0.95), rgba(1, 15, 24, 0.95));
+    background: linear-gradient(180deg, rgba(6, 24, 33, 0.95), rgba(1, 15, 24, 0.95));
     border: 1px solid var(--gold-deep);
     box-shadow:
       inset 0 0 0 1px rgba(59, 43, 13, 0.3),
@@ -180,12 +191,14 @@
 
   .gold-divider {
     height: 1px;
-    background: linear-gradient(90deg,
-        transparent 0%,
-        var(--gold) 20%,
-        var(--gold-bright) 50%,
-        var(--gold) 80%,
-        transparent 100%);
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--gold) 20%,
+      var(--gold-bright) 50%,
+      var(--gold) 80%,
+      transparent 100%
+    );
   }
 
   .text-glow-gold {
@@ -250,13 +263,17 @@
     color: var(--foreground);
     padding: 0.4rem 0.85rem;
     font-family: var(--font-serif);
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
   }
 
   .input-hex:focus {
     outline: none;
     border-color: var(--gold-bright);
-    box-shadow: 0 0 0 1px var(--gold), 0 0 12px rgba(233, 171, 43, 0.3);
+    box-shadow:
+      0 0 0 1px var(--gold),
+      0 0 12px rgba(233, 171, 43, 0.3);
   }
 
   /* CSGO scroll strip */
@@ -266,7 +283,6 @@
   }
 
   @keyframes pulse-glow {
-
     0%,
     100% {
       box-shadow: 0 0 12px rgba(233, 171, 43, 0.3);

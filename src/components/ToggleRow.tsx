@@ -20,9 +20,7 @@ export const ToggleRow = ({ label, hint, value, onChange, disabled }: ToggleRowP
         <div className="font-display text-sm uppercase tracking-[0.2em] text-gold-bright">
           {label}
         </div>
-        {hint && (
-          <div className="mt-0.5 text-xs italic text-muted-foreground">{hint}</div>
-        )}
+        {hint && <div className="mt-0.5 text-xs italic text-muted-foreground">{hint}</div>}
       </div>
       <div
         className={`relative h-6 w-12 shrink-0 border transition-colors ${

@@ -24,11 +24,21 @@ export const useLocalStorage = <T>(
   key: string,
   initialValue: T,
 ): [T, (value: T | ((previous: T) => T)) => void, () => void] => {
-  const [state, setState] = useState<T>(() => readFromStorage(key, initialValue));
+  const [state, setState] = useState<T>(initialValue);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
+    const stored = readFromStorage(key, initialValue);
+    if (stored !== initialValue) {
+      setState(stored);
+    }
+    setIsHydrated(true);
+  }, [key, initialValue]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
     writeToStorage(key, state);
-  }, [key, state]);
+  }, [key, state, isHydrated]);
 
   const setValue = useCallback(
     (value: T | ((previous: T) => T)) => {
