@@ -58,9 +58,14 @@ export const useV3Store = () => {
       const storedItem = localStorage.getItem(V3_STORAGE_KEY);
       if (storedItem) {
         const parsedData = JSON.parse(storedItem) as V3PersistedState;
+        const clampedSummonerList = (parsedData.summonerList || []).map((summoner) => ({
+          ...summoner,
+          powerScore: Math.min(10, Math.max(1, Math.round(Number(summoner.powerScore) || 5))),
+        }));
         setPersistedState({
           ...V3_DEFAULT_PERSISTED_STATE,
           ...parsedData,
+          summonerList: clampedSummonerList,
           settings: {
             ...V3_DEFAULT_SETTINGS,
             ...(parsedData.settings || {}),
@@ -110,10 +115,14 @@ export const useV3Store = () => {
         // Fetch user data from Supabase
         fetchV3DataFromSupabase(currentUserId)
           .then((data) => {
+            const clampedSummonerList = (data.summonerList || []).map((summoner) => ({
+              ...summoner,
+              powerScore: Math.min(10, Math.max(1, Math.round(Number(summoner.powerScore) || 5))),
+            }));
             setPersistedState((prev) => ({
               ...prev,
               settings: data.settings,
-              summonerList: data.summonerList,
+              summonerList: clampedSummonerList,
               matchResults: data.matchResults,
             }));
           })
@@ -156,7 +165,10 @@ export const useV3Store = () => {
         return false;
       }
 
-      const powerScoreToUse = initialPowerScore ?? V3_DEFAULT_POWER_SCORE;
+      const powerScoreToUse = Math.min(
+        10,
+        Math.max(1, Math.round(Number(initialPowerScore ?? V3_DEFAULT_POWER_SCORE) || 5)),
+      );
       const newId = crypto.randomUUID();
 
       const newSummonerItem: V3Summoner = {
@@ -200,20 +212,25 @@ export const useV3Store = () => {
         return;
       }
 
+      const clampedPowerScore = Math.min(
+        10,
+        Math.max(1, Math.round(Number(updatedPowerScore) || 5)),
+      );
+
       setPersistedState((previousState) => {
         const updatedList = previousState.summonerList.map((summonerItem) => {
           if (summonerItem.id === targetId) {
             return {
               ...summonerItem,
               name: trimmedName,
-              powerScore: updatedPowerScore,
+              powerScore: clampedPowerScore,
             };
           }
           return summonerItem;
         });
 
         if (isLoggedIn && user?.id) {
-          updateV3SummonerInSupabase(user.id, targetId, trimmedName, updatedPowerScore).catch(
+          updateV3SummonerInSupabase(user.id, targetId, trimmedName, clampedPowerScore).catch(
             (err) => console.error("Error updating summoner in Supabase:", err),
           );
         }
@@ -306,22 +323,38 @@ export const useV3Store = () => {
 
     if (!outcome) return;
 
+    // Find the first lane index that has at least 1 player assigned
+    const firstActiveLaneIndex = outcome.matchResult.lanes.findIndex(
+      (lane) => lane.bluePlayer !== null || lane.redPlayer !== null,
+    );
+
     if (
       persistedState.settings.isSkipAnimationEnabled ||
-      persistedState.settings.animationDurationSeconds <= 0
+      persistedState.settings.animationDurationSeconds <= 0 ||
+      firstActiveLaneIndex === -1
     ) {
       commitMatchOutcome(outcome);
     } else {
       setPendingOutcome(outcome);
-      setAnimatingLaneIdx(0);
+      setAnimatingLaneIdx(firstActiveLaneIndex);
     }
   }, [persistedState.summonerList, persistedState.settings, championPool, commitMatchOutcome]);
 
   const handleLaneComplete = useCallback(() => {
     if (!pendingOutcome) return;
 
-    if (animatingLaneIdx + 1 < pendingOutcome.matchResult.lanes.length) {
-      setAnimatingLaneIdx((prev) => prev + 1);
+    const lanes = pendingOutcome.matchResult.lanes;
+    // Find the next lane index after animatingLaneIdx that has at least 1 player assigned
+    let nextActiveIndex = -1;
+    for (let index = animatingLaneIdx + 1; index < lanes.length; index++) {
+      if (lanes[index].bluePlayer !== null || lanes[index].redPlayer !== null) {
+        nextActiveIndex = index;
+        break;
+      }
+    }
+
+    if (nextActiveIndex !== -1) {
+      setAnimatingLaneIdx(nextActiveIndex);
     } else {
       commitMatchOutcome(pendingOutcome);
       setPendingOutcome(null);

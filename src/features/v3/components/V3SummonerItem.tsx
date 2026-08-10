@@ -1,9 +1,9 @@
 import React from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { DragDropVerticalIcon, Edit02Icon, Delete02Icon } from "@hugeicons/core-free-icons";
-import { Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { V3Summoner } from "@/features/v3/types/v3Types";
+import { BananaPowerDisplay } from "@/features/v3/components/BananaPowerDisplay";
 
 type V3SummonerItemProps = {
   summonerItem: V3Summoner;
@@ -104,9 +104,7 @@ export const V3SummonerItem = ({
             {summonerItem.name}
           </span>
           {isEvaluatePowerEnabled && (
-            <span className="text-[10px] font-mono text-gold-bright/90">
-              Power: {summonerItem.powerScore}
-            </span>
+            <BananaPowerDisplay powerScore={summonerItem.powerScore} />
           )}
         </div>
       </div>

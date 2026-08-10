@@ -129,10 +129,22 @@ export const V3ResultTable = ({
         <div className="rounded-lg border border-gold/40 bg-card/90 p-4 shadow-xl hextech-frame space-y-3 animate-fade-in">
           <div className="flex items-center justify-between border-b border-gold/20 pb-2">
             <span className="font-display text-xs uppercase tracking-[0.2em] text-gold-bright flex items-center gap-2">
-              <span>
-                {v3Locales.matchResults.shufflingText} Lane {animatingLaneIdx + 1} /{" "}
-                {pendingOutcome.matchResult.lanes.length}
-              </span>
+              {(() => {
+                const activeLanes = pendingOutcome.matchResult.lanes.filter(
+                  (lane) => lane.bluePlayer !== null || lane.redPlayer !== null,
+                );
+                const currentLane = pendingOutcome.matchResult.lanes[animatingLaneIdx];
+                const currentStep =
+                  activeLanes.findIndex((lane) => lane.role === currentLane?.role) + 1;
+                const totalSteps = activeLanes.length;
+
+                return (
+                  <span>
+                    {v3Locales.matchResults.shufflingText} Lane {currentStep > 0 ? currentStep : 1} /{" "}
+                    {totalSteps > 0 ? totalSteps : 1}
+                  </span>
+                );
+              })()}
             </span>
             <button
               type="button"

@@ -26,12 +26,12 @@ export const V3EditSummonerDialog = ({
 }: V3EditSummonerDialogProps) => {
   const v3Locales = useV3Locales();
   const [editedName, setEditedName] = useState<string>("");
-  const [editedPowerScore, setEditedPowerScore] = useState<number | "">(100);
+  const [editedPowerScore, setEditedPowerScore] = useState<number | "">(5);
 
   useEffect(() => {
     if (editingSummoner) {
       setEditedName(editingSummoner.name);
-      setEditedPowerScore(editingSummoner.powerScore);
+      setEditedPowerScore(Math.min(10, Math.max(1, editingSummoner.powerScore || 1)));
     }
   }, [editingSummoner]);
 
@@ -43,7 +43,8 @@ export const V3EditSummonerDialog = ({
 
     const trimmedName = editedName.trim();
     if (trimmedName) {
-      const finalPowerScore = typeof editedPowerScore === "number" ? editedPowerScore : 0;
+      const rawPower = typeof editedPowerScore === "number" ? editedPowerScore : 5;
+      const finalPowerScore = Math.min(10, Math.max(1, rawPower));
       onConfirmEdit(editingSummoner.id, trimmedName, finalPowerScore);
       onClose();
     }
@@ -86,9 +87,9 @@ export const V3EditSummonerDialog = ({
             <input
               id="v3-edit-power-input"
               type="number"
-              min={0}
-              max={10000}
-              step={10}
+              min={1}
+              max={10}
+              step={1}
               value={editedPowerScore}
               onChange={(event) => {
                 const val = event.target.value;
@@ -98,7 +99,7 @@ export const V3EditSummonerDialog = ({
                 }
                 const parsedValue = parseInt(val, 10);
                 setEditedPowerScore(
-                  isNaN(parsedValue) ? 0 : Math.min(10000, Math.max(0, parsedValue)),
+                  isNaN(parsedValue) ? 1 : Math.min(10, Math.max(1, parsedValue)),
                 );
               }}
               className="w-full px-3 py-2 rounded bg-background/90 border border-gold/30 text-foreground text-xs input-hex font-mono"

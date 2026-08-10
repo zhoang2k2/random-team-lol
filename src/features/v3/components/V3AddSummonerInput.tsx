@@ -20,7 +20,7 @@ export const V3AddSummonerInput = ({
   const v3Locales = useV3Locales();
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const [inputSummonerName, setInputSummonerName] = useState<string>("");
-  const [inputPowerScore, setInputPowerScore] = useState<number | "">(100);
+  const [inputPowerScore, setInputPowerScore] = useState<number | "">(5);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -38,11 +38,12 @@ export const V3AddSummonerInput = ({
       return;
     }
 
-    const powerToSubmit = typeof inputPowerScore === "number" ? inputPowerScore : 0;
+    const rawPower = typeof inputPowerScore === "number" ? inputPowerScore : 5;
+    const powerToSubmit = Math.min(10, Math.max(1, rawPower));
     const isSuccess = onAddSummoner(trimmedName, powerToSubmit);
     if (isSuccess) {
       setInputSummonerName("");
-      setInputPowerScore(100);
+      setInputPowerScore(5);
       setErrorMessage(null);
     } else if (isGuestMaxReached) {
       setErrorMessage(v3Locales.addSummoner.guestLimitReached);
@@ -134,9 +135,9 @@ export const V3AddSummonerInput = ({
                 id="v3-power-score-input"
                 type="number"
                 disabled={isGuestMaxReached}
-                min={0}
-                max={10000}
-                step={10}
+                min={1}
+                max={10}
+                step={1}
                 value={inputPowerScore}
                 onChange={(event) => {
                   const val = event.target.value;
@@ -146,7 +147,7 @@ export const V3AddSummonerInput = ({
                   }
                   const parsedValue = parseInt(val, 10);
                   setInputPowerScore(
-                    isNaN(parsedValue) ? 0 : Math.min(10000, Math.max(0, parsedValue)),
+                    isNaN(parsedValue) ? 1 : Math.min(10, Math.max(1, parsedValue)),
                   );
                 }}
                 className="w-full px-3 py-1.5 rounded bg-background/90 border border-gold/30 text-foreground text-xs input-hex font-mono disabled:opacity-50 disabled:cursor-not-allowed"

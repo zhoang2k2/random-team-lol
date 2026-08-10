@@ -81,8 +81,14 @@ export const V3ActiveSummonerGrid = ({
         <div className="pb-1.5 border-b-2 border-blue-500/50 text-xs font-display uppercase tracking-widest font-bold text-blue-400 flex items-center justify-between">
           <span>{v3Locales.activeGrid.teamOneTitle}</span>
           {isEvaluatePowerEnabled && (
-            <span className="text-[10px] font-mono text-blue-300/90">
-              Power: {totalTeamOnePower}
+            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-blue-300/90">
+              <span>{totalTeamOnePower}</span>
+              <img
+                src="/images/banana-power.png"
+                alt="banana"
+                className="w-6 h-6 object-contain rotate-[-20deg]"
+                style={{ transform: "rotate(-20deg)" }}
+              />
             </span>
           )}
         </div>
@@ -91,8 +97,14 @@ export const V3ActiveSummonerGrid = ({
         <div className="pb-1.5 border-b-2 border-red-500/50 text-xs font-display uppercase tracking-widest font-bold text-red-400 flex items-center justify-between">
           <span>{v3Locales.activeGrid.teamTwoTitle}</span>
           {isEvaluatePowerEnabled && (
-            <span className="text-[10px] font-mono text-red-300/90">
-              Power: {totalTeamTwoPower}
+            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-red-300/90">
+              <span>{totalTeamTwoPower}</span>
+              <img
+                src="/images/banana-power.png"
+                alt="banana"
+                className="w-6 h-6 object-contain rotate-[-20deg]"
+                style={{ transform: "rotate(-20deg)" }}
+              />
             </span>
           )}
         </div>

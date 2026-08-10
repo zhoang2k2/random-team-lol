@@ -97,20 +97,44 @@ export const V3MatchCard = ({
                 <span className="font-display uppercase text-[9px] text-blue-400 font-semibold">
                   {v3Locales.matchCard.blueTeam}:
                 </span>
-                <span className="font-semibold text-[11px]">{match.blueTotalPower}</span>
+                <span className="font-semibold text-[11px] inline-flex items-center gap-1">
+                  <span>{match.blueTotalPower}</span>
+                  <img
+                    src="/images/banana-power.png"
+                    alt="banana"
+                    className="w-6 h-6 object-contain rotate-[-20deg]"
+                    style={{ transform: "rotate(-20deg)" }}
+                  />
+                </span>
               </div>
 
               <div className="flex items-center gap-1.5 text-red-300">
                 <span className="font-display uppercase text-[9px] text-red-400 font-semibold">
                   {v3Locales.matchCard.redTeam}:
                 </span>
-                <span className="font-semibold text-[11px]">{match.redTotalPower}</span>
+                <span className="font-semibold text-[11px] inline-flex items-center gap-1">
+                  <span>{match.redTotalPower}</span>
+                  <img
+                    src="/images/banana-power.png"
+                    alt="banana"
+                    className="w-6 h-6 object-contain rotate-[-20deg]"
+                    style={{ transform: "rotate(-20deg)" }}
+                  />
+                </span>
               </div>
             </div>
 
             <div className="flex items-center gap-1.5 text-muted-foreground text-[10px]">
               <span>{v3Locales.matchResults.powerDiffLabel}:</span>
-              <span className="font-bold text-gold-bright">{match.powerDiff}</span>
+              <span className="font-bold text-gold-bright inline-flex items-center gap-1">
+                <span>{match.powerDiff}</span>
+                <img
+                  src="/images/banana-power.png"
+                  alt="banana"
+                  className="w-5 h-5 object-contain rotate-[-20deg]"
+                  style={{ transform: "rotate(-20deg)" }}
+                />
+              </span>
             </div>
           </div>
         )}
