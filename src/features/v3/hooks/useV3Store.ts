@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import type { V3Summoner, V3PersistedState, V3MatchResult } from "@/features/v3/types/v3Types";
+import type {
+  V3Summoner,
+  V3PersistedState,
+  V3MatchResult,
+  V3Settings,
+} from "@/features/v3/types/v3Types";
 import type { DefaultRoleConfig } from "@/components/DefaultRolePicker";
 import type { ExclusionPair } from "@/lib/randomize";
 import {
@@ -38,6 +43,8 @@ export const useV3Store = () => {
   const [draggedSourceIndex, setDraggedSourceIndex] = useState<number | null>(null);
   const [previewDropTargetIndex, setPreviewDropTargetIndex] = useState<number | null>(null);
   const [championPool, setChampionPool] = useState<Champion[]>([]);
+  const [isDataLoading, setIsDataLoading] = useState(true);
+  const [isApiSaving, setIsApiSaving] = useState(false);
 
   // Ref to keep track of previous auth user ID to detect transitions
   const previousUserIdRef = useRef<string | null>(null);
@@ -52,6 +59,7 @@ export const useV3Store = () => {
   const [animatingLaneIdx, setAnimatingLaneIdx] = useState<number>(-1);
 
   const isShufflingAnimation = pendingOutcome !== null;
+  const isBusy = isDataLoading || isApiSaving || isShufflingAnimation;
 
   // 1. Initial LocalStorage Hydration (Anonymous mode startup)
   useEffect(() => {
@@ -78,8 +86,11 @@ export const useV3Store = () => {
       console.error("Failed to parse V3 persisted state from localStorage", error);
     } finally {
       setIsHydrated(true);
+      if (!isLoggedIn) {
+        setIsDataLoading(false);
+      }
     }
-  }, []);
+  }, [isLoggedIn]);
 
   // 2. Champion Pool Loading
   useEffect(() => {
@@ -105,6 +116,7 @@ export const useV3Store = () => {
       if (previousUserIdRef.current !== currentUserId || !isInitialAuthCheckedRef.current) {
         previousUserIdRef.current = currentUserId;
         isInitialAuthCheckedRef.current = true;
+        setIsDataLoading(true);
 
         // Requirement 2: Clear LocalStorage upon successful login
         try {
@@ -129,16 +141,18 @@ export const useV3Store = () => {
           })
           .catch((err) => {
             console.error("Failed to load user data from Supabase:", err);
-            // Requirement 10: Do not silently overwrite app state with empty data if fetch fails
+          })
+          .finally(() => {
+            setIsDataLoading(false);
           });
       }
     } else {
       // Detect LOGOUT transition
       if (previousUserIdRef.current !== null) {
         previousUserIdRef.current = null;
-        // In anonymous mode now, state will be saved to LocalStorage via the persistence effect
       }
       isInitialAuthCheckedRef.current = true;
+      setIsDataLoading(false);
     }
   }, [isLoggedIn, user?.id]);
 
@@ -151,6 +165,22 @@ export const useV3Store = () => {
       console.error("Failed to save V3 state to localStorage", error);
     }
   }, [persistedState, isHydrated, isLoggedIn]);
+
+  // 5. Persistence of Settings to Supabase (AUTHENTICATED MODE ONLY)
+  const isInitialSettingsLoadedRef = useRef(false);
+  useEffect(() => {
+    if (!isLoggedIn || !user?.id || !isHydrated) {
+      isInitialSettingsLoadedRef.current = false;
+      return;
+    }
+    if (!isInitialSettingsLoadedRef.current) {
+      isInitialSettingsLoadedRef.current = true;
+      return;
+    }
+    saveV3SettingsToSupabase(user.id, persistedState.settings).catch((err) =>
+      console.error("Failed to auto-sync settings to Supabase:", err),
+    );
+  }, [persistedState.settings, isLoggedIn, user?.id, isHydrated]);
 
   // Actions
   const handleAddSummoner = useCallback(
@@ -648,6 +678,9 @@ export const useV3Store = () => {
   return {
     isLoggedIn: isLoggedIn,
     user: user,
+    isDataLoading: isDataLoading,
+    isApiSaving: isApiSaving,
+    isBusy: isBusy,
     summonerList: persistedState.summonerList,
     settings: persistedState.settings,
     laneResults: persistedState.laneResults,

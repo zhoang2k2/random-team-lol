@@ -166,18 +166,24 @@ export const useShuffleEngine = ({
       defaultRoles,
     );
 
-    // Champion picks — deduplicate across rounds; reset pool when exhausted
+    // Champion picks — all picks within one round must be unique (no two summoners
+    // in the same round share a champion, regardless of team).
+    // Cross-round dedup: champions used in previous rounds are excluded until pool runs out.
     const totalChamps = pairings.reduce(
       (count, p) => count + (p.alpha ? 1 : 0) + (p.beta ? 1 : 0),
       0,
     );
-    let used = usedChampionsRef.current;
-    if (champions.length - used.size < totalChamps) {
-      used = new Set();
-      usedChampionsRef.current = used;
+    // Snapshot the current used set so concurrent calls don't share a stale reference
+    let usedSnapshot = new Set(usedChampionsRef.current);
+    if (champions.length - usedSnapshot.size < totalChamps) {
+      // Pool exhausted — reset and start fresh
+      usedSnapshot = new Set();
     }
-    const champPicks = pickRandomChampions(champions, totalChamps, used);
-    champPicks.forEach((champ) => used.add(champ.id));
+    // pickRandomChampions uses Fisher-Yates so all picks are unique within one call
+    const champPicks = pickRandomChampions(champions, totalChamps, usedSnapshot);
+    // Commit picks back to the ref immediately, before any state update
+    champPicks.forEach((champ) => usedSnapshot.add(champ.id));
+    usedChampionsRef.current = usedSnapshot;
 
     let cursor = 0;
     const lanes: ShuffleLane[] = pairings.map((pairing) => ({

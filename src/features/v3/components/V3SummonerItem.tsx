@@ -103,9 +103,7 @@ export const V3SummonerItem = ({
           <span className="font-display font-medium text-sm sm:text-base tracking-wide truncate">
             {summonerItem.name}
           </span>
-          {isEvaluatePowerEnabled && (
-            <BananaPowerDisplay powerScore={summonerItem.powerScore} />
-          )}
+          {isEvaluatePowerEnabled && <BananaPowerDisplay powerScore={summonerItem.powerScore} />}
         </div>
       </div>
 

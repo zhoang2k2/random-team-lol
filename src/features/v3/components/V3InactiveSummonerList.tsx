@@ -5,11 +5,14 @@ import { useV3Locales } from "@/features/v3/locales/v3Locales";
 import type { V3Summoner } from "@/features/v3/types/v3Types";
 import { V3SummonerItem } from "@/features/v3/components/V3SummonerItem";
 import { V3CardHeader } from "@/features/v3/components/V3CardHeader";
+import { SkeletonSummonerSlot } from "@/components/ui/skeleton";
 
 type V3InactiveSummonerListProps = {
   summonerList: V3Summoner[];
   isEvaluatePowerEnabled: boolean;
   isDragDisabled?: boolean;
+  isDataLoading?: boolean;
+  isDisabled?: boolean;
   draggedSourceIndex: number | null;
   previewDropTargetIndex: number | null;
   onEditClick: (summonerItem: V3Summoner) => void;
@@ -24,6 +27,8 @@ export const V3InactiveSummonerList = ({
   summonerList,
   isEvaluatePowerEnabled,
   isDragDisabled = false,
+  isDataLoading = false,
+  isDisabled = false,
   draggedSourceIndex,
   previewDropTargetIndex,
   onEditClick,
@@ -36,6 +41,7 @@ export const V3InactiveSummonerList = ({
   const v3Locales = useV3Locales();
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const inactiveSummoners = summonerList.slice(10);
+  const effectiveDragDisabled = isDragDisabled || isDisabled;
 
   return (
     <div
@@ -54,7 +60,13 @@ export const V3InactiveSummonerList = ({
 
       {!isCollapsed && (
         <div className="mt-3 border-t border-gold/20 pt-3 animate-fade-in">
-          {inactiveSummoners.length === 0 ? (
+          {isDataLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {Array.from({ length: 4 }).map((_, idx) => (
+                <SkeletonSummonerSlot key={`inactive-skeleton-${idx}`} />
+              ))}
+            </div>
+          ) : inactiveSummoners.length === 0 ? (
             <div className="py-4 text-center text-xs text-muted-foreground/60 italic border border-dashed border-gold/20 rounded">
               {v3Locales.inactiveList.emptyListText}
             </div>
@@ -70,7 +82,7 @@ export const V3InactiveSummonerList = ({
                     itemIndex={actualIndex}
                     isActiveSlot={false}
                     isEvaluatePowerEnabled={isEvaluatePowerEnabled}
-                    isDragDisabled={isDragDisabled}
+                    isDragDisabled={effectiveDragDisabled}
                     isBeingDragged={draggedSourceIndex === actualIndex}
                     isPreviewDropTarget={previewDropTargetIndex === actualIndex}
                     onEditClick={onEditClick}

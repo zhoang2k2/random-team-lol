@@ -23,6 +23,9 @@ const RandomLolPage = () => {
 
   const {
     isLoggedIn,
+    isDataLoading,
+    isApiSaving,
+    isBusy,
     summonerList,
     settings,
     matchResults,
@@ -57,7 +60,7 @@ const RandomLolPage = () => {
   const [isClearRosterDialogOpen, setIsClearRosterDialogOpen] = useState(false);
 
   const activeMemberNames = summonerList.slice(0, 10).map((summoner) => summoner.name);
-  const isDragDisabled = settings.isEvaluatePowerEnabled || settings.isShuffleTeamEnabled;
+  const isDragDisabled = settings.isEvaluatePowerEnabled || settings.isShuffleTeamEnabled || isBusy;
   const isGuestMaxReached = !isLoggedIn && summonerList.length >= 10;
 
   return (
@@ -77,12 +80,15 @@ const RandomLolPage = () => {
               isEvaluatePowerEnabled={settings.isEvaluatePowerEnabled}
               onAddSummoner={handleAddSummoner}
               isGuestMaxReached={isGuestMaxReached}
+              isDisabled={isBusy}
             />
 
             <V3ActiveSummonerGrid
               summonerList={summonerList}
               isEvaluatePowerEnabled={settings.isEvaluatePowerEnabled}
               isDragDisabled={isDragDisabled}
+              isDataLoading={isDataLoading}
+              isDisabled={isBusy}
               draggedSourceIndex={draggedSourceIndex}
               previewDropTargetIndex={previewDropTargetIndex}
               onEditClick={(summonerItem) => setEditingSummonerItem(summonerItem)}
@@ -99,6 +105,8 @@ const RandomLolPage = () => {
                 summonerList={summonerList}
                 isEvaluatePowerEnabled={settings.isEvaluatePowerEnabled}
                 isDragDisabled={isDragDisabled}
+                isDataLoading={isDataLoading}
+                isDisabled={isBusy}
                 draggedSourceIndex={draggedSourceIndex}
                 previewDropTargetIndex={previewDropTargetIndex}
                 onEditClick={(summonerItem) => setEditingSummonerItem(summonerItem)}
@@ -113,6 +121,8 @@ const RandomLolPage = () => {
             <V3SettingsCard
               settings={settings}
               activeMemberNames={activeMemberNames}
+              isDataLoading={isDataLoading}
+              isDisabled={isBusy}
               onToggleShuffleTeam={handleToggleShuffleTeam}
               onTogglePowerEvaluate={handleTogglePowerEvaluate}
               onToggleSkipAnimation={handleToggleSkipAnimation}
@@ -127,6 +137,8 @@ const RandomLolPage = () => {
               settings={settings}
               matchResults={matchResults}
               isShufflingAnimation={isShufflingAnimation}
+              isDataLoading={isDataLoading}
+              isDisabled={isBusy}
               pendingOutcome={pendingOutcome}
               animatingLaneIdx={animatingLaneIdx}
               championPool={championPool}

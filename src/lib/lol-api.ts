@@ -98,6 +98,11 @@ export function pickRandomChampions(
 ): Champion[] {
   const filtered =
     excludeIds && excludeIds.size > 0 ? pool.filter((c) => !excludeIds.has(c.id)) : pool;
-  const shuffled = [...filtered].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, n);
+  // Fisher-Yates — uniform distribution, no duplicates within one call
+  const arr = [...filtered];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr.slice(0, Math.min(n, arr.length));
 }

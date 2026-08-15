@@ -1,5 +1,4 @@
-import type { Champion, Role } from "@/lib/lol-api";
-import { ROLES_ORDER } from "@/lib/lol-api";
+import { ROLES_ORDER, pickRandomChampions, type Champion, type Role } from "@/lib/lol-api";
 import type {
   V3Summoner,
   V3Settings,
@@ -15,12 +14,6 @@ export type CreateMatchOutcome = {
   updatedActiveSummoners?: V3Summoner[];
   partitionSignature?: string;
 };
-
-function getRandomChampion(pool: Champion[]): Champion | null {
-  if (!pool || pool.length === 0) return null;
-  const index = Math.floor(Math.random() * pool.length);
-  return pool[index];
-}
 
 export function createV3MatchResult(
   summonerList: V3Summoner[],
@@ -103,12 +96,22 @@ export function createV3MatchResult(
     }));
   }
 
-  // Create lanes and assign fresh random champions independently for each player
+  // Create lanes and assign unique random champions without duplicates for all players in the match
   const activeMap = new Map(activeSummoners.map((s) => [s.name, s]));
   const lanes: V3MatchLaneResult[] = [];
 
   let blueTotalPower = 0;
   let redTotalPower = 0;
+
+  const totalPlayerCount = lanePlayerNames.reduce((count, item) => {
+    let c = count;
+    if (item.blueName && activeMap.has(item.blueName)) c++;
+    if (item.redName && activeMap.has(item.redName)) c++;
+    return c;
+  }, 0);
+
+  const champPicks = pickRandomChampions(championPool, totalPlayerCount);
+  let champCursor = 0;
 
   for (const item of lanePlayerNames) {
     let bluePlayer: V3PlayerMatchInfo | null = null;
@@ -119,7 +122,7 @@ export function createV3MatchResult(
       bluePlayer = {
         name: summoner.name,
         powerScore: summoner.powerScore,
-        champion: getRandomChampion(championPool),
+        champion: champPicks[champCursor++] ?? null,
       };
       blueTotalPower += summoner.powerScore;
     }
@@ -129,7 +132,7 @@ export function createV3MatchResult(
       redPlayer = {
         name: summoner.name,
         powerScore: summoner.powerScore,
-        champion: getRandomChampion(championPool),
+        champion: champPicks[champCursor++] ?? null,
       };
       redTotalPower += summoner.powerScore;
     }
