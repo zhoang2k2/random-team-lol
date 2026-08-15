@@ -10,12 +10,14 @@ type V3AddSummonerInputProps = {
   isEvaluatePowerEnabled: boolean;
   onAddSummoner: (summonerName: string, initialPowerScore?: number) => boolean;
   isGuestMaxReached?: boolean;
+  isDisabled?: boolean;
 };
 
 export const V3AddSummonerInput = ({
   isEvaluatePowerEnabled,
   onAddSummoner,
   isGuestMaxReached = false,
+  isDisabled = false,
 }: V3AddSummonerInputProps) => {
   const v3Locales = useV3Locales();
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
@@ -95,7 +97,7 @@ export const V3AddSummonerInput = ({
             <input
               id="v3-summoner-name-input"
               type="text"
-              disabled={isGuestMaxReached}
+              disabled={isGuestMaxReached || isDisabled}
               value={inputSummonerName}
               onChange={(event) => {
                 setInputSummonerName(event.target.value);
@@ -134,7 +136,7 @@ export const V3AddSummonerInput = ({
               <input
                 id="v3-power-score-input"
                 type="number"
-                disabled={isGuestMaxReached}
+                disabled={isGuestMaxReached || isDisabled}
                 min={1}
                 max={10}
                 step={1}
@@ -159,7 +161,7 @@ export const V3AddSummonerInput = ({
             type="submit"
             variant="primary"
             size="md"
-            disabled={isGuestMaxReached}
+            disabled={isGuestMaxReached || isDisabled}
             className="w-full mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {v3Locales.addSummoner.addButtonLabel}

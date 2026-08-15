@@ -47,14 +47,14 @@
 
   /* Typography Scale: Ratio 1.2 (Minor Third) */
   --font-scale-ratio: 1.2;
-  --font-size-3xs: 0.579rem;  /* ~9.3px */
-  --font-size-2xs: 0.694rem;  /* ~11.1px */
-  --font-size-xs: 0.833rem;   /* ~13.3px */
-  --font-size-sm: 1rem;       /* 16px */
-  --font-size-base: 1.2rem;   /* ~19.2px */
-  --font-size-lg: 1.44rem;    /* ~23px */
-  --font-size-xl: 1.728rem;   /* ~27.6px */
-  --font-size-2xl: 2.074rem;  /* ~33.2px */
+  --font-size-3xs: 0.579rem; /* ~9.3px */
+  --font-size-2xs: 0.694rem; /* ~11.1px */
+  --font-size-xs: 0.833rem; /* ~13.3px */
+  --font-size-sm: 1rem; /* 16px */
+  --font-size-base: 1.2rem; /* ~19.2px */
+  --font-size-lg: 1.44rem; /* ~23px */
+  --font-size-xl: 1.728rem; /* ~27.6px */
+  --font-size-2xl: 2.074rem; /* ~33.2px */
 
   /* LoL inspired dark hextech palette */
   --background: #030f16;
@@ -305,5 +305,18 @@
     100% {
       transform: translateY(-100%);
     }
+  }
+
+  @keyframes hex-shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-hex-shimmer {
+    animation: hex-shimmer 1.8s infinite;
   }
 }

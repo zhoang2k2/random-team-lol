@@ -64,9 +64,7 @@ function generateCombinations(n: number, k: number): number[][] {
  * Performs weighted random selection over a pool of partition candidates.
  * Weight for each candidate = 1 / (powerDiff + 1).
  */
-function selectWeightedRandomCandidate<T extends { powerDiff: number }>(
-  candidates: T[],
-): T {
+function selectWeightedRandomCandidate<T extends { powerDiff: number }>(candidates: T[]): T {
   if (candidates.length === 1) {
     return candidates[0];
   }
@@ -183,8 +181,14 @@ export function calculateV3PowerBalancedTeams(
       top1Id && top2Id && ((top1InT1 && !top2InT1) || (!top1InT1 && top2InT1)),
     );
 
-    const team1Power = team1.reduce((accumulator, summoner) => accumulator + summoner.powerScore, 0);
-    const team2Power = team2.reduce((accumulator, summoner) => accumulator + summoner.powerScore, 0);
+    const team1Power = team1.reduce(
+      (accumulator, summoner) => accumulator + summoner.powerScore,
+      0,
+    );
+    const team2Power = team2.reduce(
+      (accumulator, summoner) => accumulator + summoner.powerScore,
+      0,
+    );
     const powerDiff = Math.abs(team1Power - team2Power);
     const signature = getPartitionSignature(team1, team2);
 
@@ -227,7 +231,9 @@ export function calculateV3PowerBalancedTeams(
   }
 
   // Step 5: Soft Tolerance Window (powerDiff <= minDiff + TOLERANCE)
-  const acceptableCandidates = poolToUse.filter((candidate) => candidate.powerDiff <= minDiff + tolerance);
+  const acceptableCandidates = poolToUse.filter(
+    (candidate) => candidate.powerDiff <= minDiff + tolerance,
+  );
 
   // Step 6: History Anti-Repeat Filter (exclude recentHistorySignatures)
   const historySet = new Set(recentHistorySignatures);

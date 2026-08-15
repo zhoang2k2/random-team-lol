@@ -38,7 +38,8 @@ export const v3Translations = {
       emptySlotText: "Vị Trí Trống",
       removeAllButton: "Xóa Tất Cả",
       clearRosterTitle: "Xóa Toàn Bộ Đội Hình",
-      clearRosterDescription: "Bạn có chắc chắn muốn xóa toàn bộ anh hùng? Hành động này không thể hoàn tác.",
+      clearRosterDescription:
+        "Bạn có chắc chắn muốn xóa toàn bộ anh hùng? Hành động này không thể hoàn tác.",
       confirmClearRosterButton: "Xóa Tất Cả",
     },
     inactiveList: {
@@ -128,7 +129,8 @@ export const v3Translations = {
       emptySlotText: "Empty Slot",
       removeAllButton: "Remove All",
       clearRosterTitle: "Clear Entire Roster",
-      clearRosterDescription: "Are you sure you want to remove all summoners? This action cannot be undone.",
+      clearRosterDescription:
+        "Are you sure you want to remove all summoners? This action cannot be undone.",
       confirmClearRosterButton: "Remove All",
     },
     inactiveList: {

@@ -12,11 +12,15 @@ import { V3CardHeader } from "@/features/v3/components/V3CardHeader";
 
 import { V3ClearConfirmDialog } from "@/features/v3/components/V3ClearConfirmDialog";
 
+import { SkeletonMatchCard } from "@/components/ui/skeleton";
+
 type V3ResultTableProps = {
   summonerList: V3Summoner[];
   settings: V3Settings;
   matchResults: V3MatchResult[];
   isShufflingAnimation: boolean;
+  isDataLoading?: boolean;
+  isDisabled?: boolean;
   pendingOutcome: { matchResult: V3MatchResult } | null;
   animatingLaneIdx: number;
   championPool: Champion[];
@@ -32,6 +36,8 @@ export const V3ResultTable = ({
   settings,
   matchResults,
   isShufflingAnimation,
+  isDataLoading = false,
+  isDisabled = false,
   pendingOutcome,
   animatingLaneIdx,
   championPool,
@@ -47,7 +53,7 @@ export const V3ResultTable = ({
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
 
   const activeSummoners = summonerList.slice(0, 10);
-  const isShuffleDisabled = activeSummoners.length < 1 || isShufflingAnimation;
+  const isShuffleDisabled = activeSummoners.length < 1 || isShufflingAnimation || isDisabled;
 
   const handleCaptureAll = async () => {
     if (!listContainerRef.current) return;
@@ -102,8 +108,9 @@ export const V3ResultTable = ({
             <>
               <button
                 type="button"
+                disabled={isDisabled}
                 onClick={handleCaptureAll}
-                className="px-3 py-2 rounded border border-gold/30 bg-background/80 hover:bg-gold/20 text-gold-bright transition-all text-xs font-display flex items-center gap-1.5 cursor-pointer"
+                className="px-3 py-2 rounded border border-gold/30 bg-background/80 hover:bg-gold/20 text-gold-bright transition-all text-xs font-display flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Camera className="w-4 h-4" />
                 <span className="hidden sm:inline">
@@ -113,8 +120,11 @@ export const V3ResultTable = ({
 
               <button
                 type="button"
-                onClick={() => setIsClearConfirmOpen(true)}
-                className="px-3 py-2 rounded border border-destructive/40 bg-destructive/10 hover:bg-destructive/20 text-destructive hover:text-red-300 transition-all text-xs font-display flex items-center gap-1.5 cursor-pointer"
+                disabled={isDisabled}
+                onClick={() => {
+                  if (!isDisabled) setIsClearConfirmOpen(true);
+                }}
+                className="px-3 py-2 rounded border border-destructive/40 bg-destructive/10 hover:bg-destructive/20 text-destructive hover:text-red-300 transition-all text-xs font-display flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Trash2 className="w-4 h-4" />
                 <span className="hidden sm:inline">{v3Locales.matchResults.clearAllButton}</span>
@@ -140,8 +150,8 @@ export const V3ResultTable = ({
 
                 return (
                   <span>
-                    {v3Locales.matchResults.shufflingText} Lane {currentStep > 0 ? currentStep : 1} /{" "}
-                    {totalSteps > 0 ? totalSteps : 1}
+                    {v3Locales.matchResults.shufflingText} Lane {currentStep > 0 ? currentStep : 1}{" "}
+                    / {totalSteps > 0 ? totalSteps : 1}
                   </span>
                 );
               })()}
@@ -187,7 +197,12 @@ export const V3ResultTable = ({
         data-capture-target="true"
         className="space-y-4 bg-background/30 p-2 rounded-lg border border-gold/10"
       >
-        {matchResults.length === 0 ? (
+        {isDataLoading ? (
+          <div className="space-y-4">
+            <SkeletonMatchCard />
+            <SkeletonMatchCard />
+          </div>
+        ) : matchResults.length === 0 ? (
           <div className="rounded-lg border border-dashed border-gold/20 bg-card/50 p-12 text-center text-muted-foreground/60 space-y-3">
             <Trophy className="w-10 h-10 mx-auto text-gold/30" />
             <p className="text-sm font-sans">{v3Locales.matchResults.noMatchText}</p>

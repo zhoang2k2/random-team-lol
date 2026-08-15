@@ -17,11 +17,7 @@ type V3ClearRosterDialogProps = {
   onConfirm: () => void;
 };
 
-export const V3ClearRosterDialog = ({
-  isOpen,
-  onClose,
-  onConfirm,
-}: V3ClearRosterDialogProps) => {
+export const V3ClearRosterDialog = ({ isOpen, onClose, onConfirm }: V3ClearRosterDialogProps) => {
   const v3Locales = useV3Locales();
 
   const handleConfirm = () => {
