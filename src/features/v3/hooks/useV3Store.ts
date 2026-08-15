@@ -216,13 +216,16 @@ export const useV3Store = () => {
 
         // Persist to Supabase if logged in
         if (isLoggedIn && user?.id) {
+          setIsApiSaving(true);
           addV3SummonerToSupabase(
             user.id,
             newId,
             trimmedName,
             powerScoreToUse,
             previousState.summonerList.length,
-          ).catch((err) => console.error("Error adding summoner to Supabase:", err));
+          )
+            .catch((err) => console.error("Error adding summoner to Supabase:", err))
+            .finally(() => setIsApiSaving(false));
         }
 
         return {
@@ -261,9 +264,10 @@ export const useV3Store = () => {
         });
 
         if (isLoggedIn && user?.id) {
-          updateV3SummonerInSupabase(user.id, targetId, trimmedName, clampedPowerScore).catch(
-            (err) => console.error("Error updating summoner in Supabase:", err),
-          );
+          setIsApiSaving(true);
+          updateV3SummonerInSupabase(user.id, targetId, trimmedName, clampedPowerScore)
+            .catch((err) => console.error("Error updating summoner in Supabase:", err))
+            .finally(() => setIsApiSaving(false));
         }
 
         return {
@@ -283,9 +287,11 @@ export const useV3Store = () => {
         });
 
         if (isLoggedIn && user?.id) {
+          setIsApiSaving(true);
           deleteV3SummonerFromSupabase(user.id, targetId)
             .then(() => syncV3SummonersOrderToSupabase(user.id, filteredList))
-            .catch((err) => console.error("Error deleting summoner from Supabase:", err));
+            .catch((err) => console.error("Error deleting summoner from Supabase:", err))
+            .finally(() => setIsApiSaving(false));
         }
 
         return {
@@ -300,9 +306,10 @@ export const useV3Store = () => {
   const handleClearAllSummoners = useCallback(() => {
     setPersistedState((previousState) => {
       if (isLoggedIn && user?.id) {
-        clearAllV3SummonersFromSupabase(user.id).catch((err) =>
-          console.error("Error clearing summoners from Supabase:", err),
-        );
+        setIsApiSaving(true);
+        clearAllV3SummonersFromSupabase(user.id)
+          .catch((err) => console.error("Error clearing summoners from Supabase:", err))
+          .finally(() => setIsApiSaving(false));
       }
       return {
         ...previousState,
@@ -314,9 +321,11 @@ export const useV3Store = () => {
   const handleResetSampleSummoners = useCallback(() => {
     setPersistedState((previousState) => {
       if (isLoggedIn && user?.id) {
+        setIsApiSaving(true);
         clearAllV3SummonersFromSupabase(user.id)
           .then(() => syncV3SummonersOrderToSupabase(user.id, V3_INITIAL_SAMPLE_SUMMONERS))
-          .catch((err) => console.error("Error resetting sample summoners in Supabase:", err));
+          .catch((err) => console.error("Error resetting sample summoners in Supabase:", err))
+          .finally(() => setIsApiSaving(false));
       }
       return {
         ...previousState,
@@ -333,11 +342,22 @@ export const useV3Store = () => {
       partitionSignature?: string;
     }) => {
       setPersistedState((previousState) => {
+        const nextSummonerList = outcome.updatedActiveSummoners
+          ? [...outcome.updatedActiveSummoners, ...previousState.summonerList.slice(10)]
+          : previousState.summonerList;
+
         if (isLoggedIn && user?.id) {
-          addV3MatchResultToSupabase(user.id, outcome.matchResult).catch((err) =>
-            console.error("Error adding match result to Supabase:", err),
-          );
+          setIsApiSaving(true);
+          Promise.all([
+            addV3MatchResultToSupabase(user.id, outcome.matchResult),
+            outcome.updatedActiveSummoners
+              ? syncV3SummonersOrderToSupabase(user.id, nextSummonerList)
+              : Promise.resolve(true),
+          ])
+            .catch((err) => console.error("Error saving match outcome to Supabase:", err))
+            .finally(() => setIsApiSaving(false));
         }
+
         const history = previousState.recentHistorySignatures || [];
         const updatedHistory = outcome.partitionSignature
           ? [...history, outcome.partitionSignature].slice(-3)
@@ -345,6 +365,7 @@ export const useV3Store = () => {
 
         return {
           ...previousState,
+          summonerList: nextSummonerList,
           matchResults: [...previousState.matchResults, outcome.matchResult],
           recentHistorySignatures: updatedHistory,
         };
@@ -419,9 +440,10 @@ export const useV3Store = () => {
     (targetMatchId: string) => {
       setPersistedState((previousState) => {
         if (isLoggedIn && user?.id) {
-          deleteV3MatchResultFromSupabase(user.id, targetMatchId).catch((err) =>
-            console.error("Error deleting match result from Supabase:", err),
-          );
+          setIsApiSaving(true);
+          deleteV3MatchResultFromSupabase(user.id, targetMatchId)
+            .catch((err) => console.error("Error deleting match result from Supabase:", err))
+            .finally(() => setIsApiSaving(false));
         }
         return {
           ...previousState,
@@ -435,9 +457,10 @@ export const useV3Store = () => {
   const handleClearAllMatchResults = useCallback(() => {
     setPersistedState((previousState) => {
       if (isLoggedIn && user?.id) {
-        clearAllV3MatchResultsFromSupabase(user.id).catch((err) =>
-          console.error("Error clearing match results from Supabase:", err),
-        );
+        setIsApiSaving(true);
+        clearAllV3MatchResultsFromSupabase(user.id)
+          .catch((err) => console.error("Error clearing match results from Supabase:", err))
+          .finally(() => setIsApiSaving(false));
       }
       return {
         ...previousState,
@@ -447,17 +470,6 @@ export const useV3Store = () => {
   }, [isLoggedIn, user?.id]);
 
   // Settings Handlers & Dependency Rules
-  const saveSettingsHelper = useCallback(
-    (nextSettings: V3Settings) => {
-      if (isLoggedIn && user?.id) {
-        saveV3SettingsToSupabase(user.id, nextSettings).catch((err) =>
-          console.error("Error saving settings to Supabase:", err),
-        );
-      }
-    },
-    [isLoggedIn, user?.id],
-  );
-
   const handleTogglePowerEvaluate = useCallback(
     (isEnabled: boolean) => {
       setPersistedState((previousState) => {
@@ -466,8 +478,6 @@ export const useV3Store = () => {
           isEvaluatePowerEnabled: isEnabled,
           isShuffleTeamEnabled: isEnabled ? true : previousState.settings.isShuffleTeamEnabled,
         };
-
-        saveSettingsHelper(nextSettings);
 
         if (isEnabled && previousState.summonerList.length >= 2) {
           const activeSummoners = previousState.summonerList.slice(0, 10);
@@ -485,9 +495,10 @@ export const useV3Store = () => {
             const updatedHistory = [...history, balancedResult.signature].slice(-3);
 
             if (isLoggedIn && user?.id) {
-              syncV3SummonersOrderToSupabase(user.id, nextSummonerList).catch((err) =>
-                console.error("Error syncing summoner order to Supabase:", err),
-              );
+              setIsApiSaving(true);
+              syncV3SummonersOrderToSupabase(user.id, nextSummonerList)
+                .catch((err) => console.error("Error syncing summoner order to Supabase:", err))
+                .finally(() => setIsApiSaving(false));
             }
 
             return {
@@ -506,101 +517,81 @@ export const useV3Store = () => {
         };
       });
     },
-    [saveSettingsHelper, isLoggedIn, user?.id],
+    [isLoggedIn, user?.id],
   );
 
-  const handleToggleShuffleTeam = useCallback(
-    (isEnabled: boolean) => {
-      setPersistedState((previousState) => {
-        if (previousState.settings.isEvaluatePowerEnabled) {
-          return previousState;
-        }
-        const nextSettings = {
-          ...previousState.settings,
-          isShuffleTeamEnabled: isEnabled,
-        };
-        saveSettingsHelper(nextSettings);
-        return {
-          ...previousState,
-          settings: nextSettings,
-        };
-      });
-    },
-    [saveSettingsHelper],
-  );
+  const handleToggleShuffleTeam = useCallback((isEnabled: boolean) => {
+    setPersistedState((previousState) => {
+      if (previousState.settings.isEvaluatePowerEnabled) {
+        return previousState;
+      }
+      const nextSettings = {
+        ...previousState.settings,
+        isShuffleTeamEnabled: isEnabled,
+      };
+      return {
+        ...previousState,
+        settings: nextSettings,
+      };
+    });
+  }, []);
 
-  const handleToggleSkipAnimation = useCallback(
-    (isEnabled: boolean) => {
-      setPersistedState((previousState) => {
-        const nextSettings = {
-          ...previousState.settings,
-          isSkipAnimationEnabled: isEnabled,
-          animationDurationSeconds: isEnabled
-            ? 0
-            : previousState.settings.animationDurationSeconds || 2,
-        };
-        saveSettingsHelper(nextSettings);
-        return {
-          ...previousState,
-          settings: nextSettings,
-        };
-      });
-    },
-    [saveSettingsHelper],
-  );
+  const handleToggleSkipAnimation = useCallback((isEnabled: boolean) => {
+    setPersistedState((previousState) => {
+      const nextSettings = {
+        ...previousState.settings,
+        isSkipAnimationEnabled: isEnabled,
+        animationDurationSeconds: isEnabled
+          ? 0
+          : previousState.settings.animationDurationSeconds || 2,
+      };
+      return {
+        ...previousState,
+        settings: nextSettings,
+      };
+    });
+  }, []);
 
-  const handleChangeAnimationDurationSeconds = useCallback(
-    (seconds: number) => {
-      const clampedSeconds = Math.min(2.5, Math.max(0, seconds));
-      setPersistedState((previousState) => {
-        const nextSettings = {
-          ...previousState.settings,
-          animationDurationSeconds: clampedSeconds,
-          isSkipAnimationEnabled: clampedSeconds === 0,
-        };
-        saveSettingsHelper(nextSettings);
-        return {
-          ...previousState,
-          settings: nextSettings,
-        };
-      });
-    },
-    [saveSettingsHelper],
-  );
+  const handleChangeAnimationDurationSeconds = useCallback((seconds: number) => {
+    const clampedSeconds = Math.min(2.5, Math.max(0, seconds));
+    setPersistedState((previousState) => {
+      const nextSettings = {
+        ...previousState.settings,
+        animationDurationSeconds: clampedSeconds,
+        isSkipAnimationEnabled: clampedSeconds === 0,
+      };
+      return {
+        ...previousState,
+        settings: nextSettings,
+      };
+    });
+  }, []);
 
-  const handleChangeDefaultRoles = useCallback(
-    (nextDefaultRoles: DefaultRoleConfig) => {
-      setPersistedState((previousState) => {
-        const nextSettings = {
-          ...previousState.settings,
-          defaultRoles: nextDefaultRoles,
-        };
-        saveSettingsHelper(nextSettings);
-        return {
-          ...previousState,
-          settings: nextSettings,
-        };
-      });
-    },
-    [saveSettingsHelper],
-  );
+  const handleChangeDefaultRoles = useCallback((nextDefaultRoles: DefaultRoleConfig) => {
+    setPersistedState((previousState) => {
+      const nextSettings = {
+        ...previousState.settings,
+        defaultRoles: nextDefaultRoles,
+      };
+      return {
+        ...previousState,
+        settings: nextSettings,
+      };
+    });
+  }, []);
 
-  const handleChangeNeverSameTeam = useCallback(
-    (pair: ExclusionPair | null) => {
-      setPersistedState((previousState) => {
-        const nextSettings = {
-          ...previousState.settings,
-          neverSameTeam: pair,
-        };
-        saveSettingsHelper(nextSettings);
-        return {
-          ...previousState,
-          settings: nextSettings,
-        };
-      });
-    },
-    [saveSettingsHelper],
-  );
+  const handleChangeNeverSameTeam = useCallback((pair: ExclusionPair | null) => {
+    setPersistedState((previousState) => {
+      const nextSettings = {
+        ...previousState.settings,
+        neverSameTeam: pair,
+      };
+      return {
+        ...previousState,
+        settings: nextSettings,
+      };
+    });
+  }, []);
 
   const handleSwapSummonerPositions = useCallback(
     (sourceIndex: number, targetIndex: number) => {
@@ -626,9 +617,10 @@ export const useV3Store = () => {
         }
 
         if (isLoggedIn && user?.id) {
-          syncV3SummonersOrderToSupabase(user.id, newList).catch((err) =>
-            console.error("Error syncing summoners order to Supabase:", err),
-          );
+          setIsApiSaving(true);
+          syncV3SummonersOrderToSupabase(user.id, newList)
+            .catch((err) => console.error("Error syncing summoners order to Supabase:", err))
+            .finally(() => setIsApiSaving(false));
         }
 
         return {
